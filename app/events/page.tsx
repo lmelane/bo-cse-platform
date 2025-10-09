@@ -139,9 +139,9 @@ export default function EventsPage() {
     };
     
     const labels = {
-      online: '✅ En ligne',
-      draft: '📝 Brouillon',
-      offline: '🔒 Hors ligne',
+      online: 'En ligne',
+      draft: 'Brouillon',
+      offline: 'Hors ligne',
     };
 
     return (

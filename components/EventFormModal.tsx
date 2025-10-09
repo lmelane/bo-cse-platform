@@ -306,9 +306,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     onChange={handleChange}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                   >
-                    <option value="online">✅ En ligne (visible)</option>
-                    <option value="draft">📝 Brouillon (non visible)</option>
-                    <option value="offline">🔒 Hors ligne (archivé)</option>
+                    <option value="online">En ligne (visible)</option>
+                    <option value="draft">Brouillon (non visible)</option>
+                    <option value="offline">Hors ligne (archivé)</option>
                   </select>
                 </div>
               </div>
