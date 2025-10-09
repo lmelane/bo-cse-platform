@@ -83,6 +83,7 @@ export interface Event {
   
   // Statut
   status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  publicationStatus: 'online' | 'offline' | 'draft';
   source: string | null;
   
   // Timestamps
@@ -158,6 +159,7 @@ const eventToApiFormat = (data: Partial<Event>) => ({
   
   // Statut
   status: data.status || 'scheduled',
+  publication_status: data.publicationStatus || 'draft',
   source: data.source,
 });
 

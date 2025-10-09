@@ -131,6 +131,26 @@ export default function EventsPage() {
     );
   };
 
+  const getPublicationBadge = (publicationStatus: Event['publicationStatus']) => {
+    const styles = {
+      online: 'bg-green-100 text-green-700',
+      draft: 'bg-yellow-100 text-yellow-700',
+      offline: 'bg-neutral-100 text-neutral-700',
+    };
+    
+    const labels = {
+      online: '✅ En ligne',
+      draft: '📝 Brouillon',
+      offline: '🔒 Hors ligne',
+    };
+
+    return (
+      <span className={`px-2 py-1 rounded-md text-xs font-medium ${styles[publicationStatus]}`}>
+        {labels[publicationStatus]}
+      </span>
+    );
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     try {
@@ -226,6 +246,9 @@ export default function EventsPage() {
                       Statut
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                      Publication
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
                       Catégorie
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
@@ -283,6 +306,9 @@ export default function EventsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(event.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getPublicationBadge(event.publicationStatus)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {event.categoryTag ? (

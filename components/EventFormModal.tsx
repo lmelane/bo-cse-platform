@@ -58,6 +58,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
     
     // Statut
     status: 'scheduled',
+    publicationStatus: 'draft',
   });
 
   useEffect(() => {
@@ -107,6 +108,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         
         // Statut
         status: event.status ?? 'scheduled',
+        publicationStatus: event.publicationStatus ?? 'draft',
       });
     } else {
       // Reset form pour création
@@ -140,6 +142,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         galleryUrls: [],
         descriptionHtml: '',
         status: 'scheduled',
+        publicationStatus: 'draft',
       });
     }
   }, [event, isOpen]);
@@ -278,7 +281,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Statut
+                    Statut de l&apos;événement
                   </label>
                   <select
                     name="status"
@@ -290,6 +293,22 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     <option value="ongoing">En cours</option>
                     <option value="completed">Terminé</option>
                     <option value="cancelled">Annulé</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Statut de publication
+                  </label>
+                  <select
+                    name="publicationStatus"
+                    value={formData.publicationStatus}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  >
+                    <option value="online">✅ En ligne (visible)</option>
+                    <option value="draft">📝 Brouillon (non visible)</option>
+                    <option value="offline">🔒 Hors ligne (archivé)</option>
                   </select>
                 </div>
               </div>
