@@ -18,8 +18,7 @@ Interface d'administration pour la plateforme d'événements CSE.
 npm install
 
 # Créer le fichier .env.local
-echo 'NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_ADMIN_TOKEN=IVNsZsL3HuXGS+1XGS94SxW+cDjelE/VV3wFCSVW7XQ=' > .env.local
+echo 'NEXT_PUBLIC_API_URL=http://localhost:3001' > .env.local
 ```
 
 ## 🔧 Configuration
@@ -28,8 +27,9 @@ Le fichier `.env.local` doit contenir :
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_ADMIN_TOKEN=<votre-token-admin>
 ```
+
+**Authentification** : Le back-office utilise un système de login classique (email/password). Vous devez avoir un compte admin créé dans votre base de données.
 
 ## 🏃 Démarrage
 
@@ -85,7 +85,10 @@ Le back-office utilise le même design system que l'application principale CSE :
 
 ## 🔒 Sécurité
 
-Toutes les requêtes vers l'API sont authentifiées avec le token admin défini dans `.env.local`. Ce token doit correspondre à la variable `ADMIN_API_TOKEN` configurée dans l'API principale.
+L'accès au back-office est protégé par :
+- **Authentification JWT** : Login via email/password
+- **Vérification du rôle** : Seuls les utilisateurs avec le rôle `admin` peuvent se connecter
+- **Token JWT** : Automatiquement ajouté à toutes les requêtes API via l'intercepteur axios
 
 ## 📝 Scripts
 

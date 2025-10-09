@@ -11,7 +11,7 @@ Le back-office dispose maintenant d'un système d'authentification complet qui v
 2. **Vérification du rôle** : Seuls les utilisateurs avec `role: 'admin'` peuvent se connecter
 3. **Token JWT** : Authentification sécurisée via l'API CSE
 4. **Redirection automatique** : Les non-authentifiés sont redirigés vers `/login`
-5. **Token API admin** : Les requêtes vers `/api/mgnt-sys-cse/*` utilisent le token admin
+5. **Intercepteur axios** : Le token JWT est automatiquement ajouté à toutes les requêtes API
 
 ## 👤 Compte Admin Créé
 
@@ -88,17 +88,14 @@ Rôle : admin
 
 ## 🛡️ Sécurité
 
-### Tokens utilisés
+### Token JWT
 
-1. **Token JWT utilisateur** (après connexion)
+**Token JWT utilisateur** (après connexion)
+   - Généré par l'API après login réussi
    - Stocké dans `localStorage` sous `admin_token`
-   - Utilisé pour les routes d'authentification (`/api/auth/*`)
-   - Expire selon la configuration JWT
-
-2. **Token API Admin** (configuration)
-   - Défini dans `.env.local` : `NEXT_PUBLIC_ADMIN_TOKEN`
-   - Utilisé pour les routes mgnt (`/api/mgnt-sys-cse/*`)
-   - Permet les opérations CRUD sur users/events
+   - Utilisé pour **toutes** les requêtes API (auth + mgnt)
+   - Ajouté automatiquement via l'intercepteur axios : `Authorization: Bearer {token}`
+   - Expire selon la configuration JWT de l'API backend
 
 ### Protection des routes
 
@@ -154,18 +151,18 @@ npx prisma studio
 ### Variables d'environnement (`.env.local`)
 
 ```env
-# API CSE (pour l'authentification utilisateur)
+# API CSE (URL de l'API backend)
 NEXT_PUBLIC_API_URL=http://localhost:3001
-
-# Token admin pour les routes mgnt
-NEXT_PUBLIC_ADMIN_TOKEN=IVNsZsL3HuXGS+1XGS94SxW+cDjelE/VV3wFCSVW7XQ=
 ```
+
+**Note** : Aucun token statique n'est nécessaire. L'authentification se fait uniquement via JWT après login.
 
 ## 📝 Notes Importantes
 
-1. **Deux niveaux de sécurité** :
-   - Authentification utilisateur (JWT)
-   - Token admin pour routes mgnt
+1. **Authentification JWT unifiée** :
+   - Un seul token JWT pour toutes les requêtes
+   - Ajouté automatiquement par l'intercepteur axios
+   - Aucun token statique côté front-end
 
 2. **Rôle admin obligatoire** :
    - La connexion vérifie `user.role === 'admin'`
@@ -178,6 +175,7 @@ NEXT_PUBLIC_ADMIN_TOKEN=IVNsZsL3HuXGS+1XGS94SxW+cDjelE/VV3wFCSVW7XQ=
 4. **Sécurité front-end** :
    - Protection des routes côté client
    - L'API CSE reste la source de vérité pour l'auth
+   - Le backend vérifie le token JWT et les permissions sur chaque requête
 
 ## 🎨 Interface
 

@@ -2,7 +2,6 @@ import axios from 'axios';
 import { tokenStorage } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const ADMIN_API_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN || '';
 
 // Instance axios configurée
 export const api = axios.create({
@@ -12,17 +11,11 @@ export const api = axios.create({
   },
 });
 
-// Intercepteur pour ajouter le token admin aux requêtes mgnt
+// Intercepteur pour ajouter le token JWT à toutes les requêtes
 api.interceptors.request.use((config) => {
-  // Pour les routes mgnt-sys-cse, utiliser le token admin
-  if (config.url?.includes('/api/mgnt-sys-cse/')) {
-    config.headers.Authorization = `Bearer ${ADMIN_API_TOKEN}`;
-  } else {
-    // Pour les autres routes, utiliser le token d'authentification utilisateur
-    const userToken = tokenStorage.get();
-    if (userToken) {
-      config.headers.Authorization = `Bearer ${userToken}`;
-    }
+  const userToken = tokenStorage.get();
+  if (userToken) {
+    config.headers.Authorization = `Bearer ${userToken}`;
   }
   return config;
 });
@@ -53,6 +46,7 @@ export interface Event {
   endsAt: string | null;
   venueName: string | null;
   city: string | null;
+  coverImageUrl: string | null;
   status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
