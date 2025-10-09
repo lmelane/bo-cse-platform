@@ -70,6 +70,23 @@ export const usersApi = {
   },
 };
 
+// Helper: Convertir Event (camelCase) vers format API (snake_case)
+const eventToApiFormat = (data: Partial<Event>) => ({
+  title: data.title,
+  subtitle: data.subtitle,
+  slug: data.slug,
+  category_tag: data.categoryTag,
+  availability_badge: data.availabilityBadge,
+  presenter_name: data.presenterName,
+  organizer_name: data.organizerName,
+  starts_at: data.startsAt,
+  ends_at: data.endsAt,
+  venue_name: data.venueName,
+  city: data.city,
+  cover_image_url: data.coverImageUrl,
+  status: data.status,
+});
+
 // API Endpoints - Events
 export const eventsApi = {
   getAll: async () => {
@@ -83,12 +100,14 @@ export const eventsApi = {
   },
   
   create: async (data: Partial<Event>) => {
-    const response = await api.post<{ success: boolean; data: Event }>('/api/mgnt-sys-cse/events', data);
+    const apiData = eventToApiFormat(data);
+    const response = await api.post<{ success: boolean; data: Event }>('/api/mgnt-sys-cse/events', apiData);
     return response.data;
   },
   
   update: async (id: string, data: Partial<Event>) => {
-    const response = await api.put<{ success: boolean; data: Event }>(`/api/mgnt-sys-cse/events/${id}`, data);
+    const apiData = eventToApiFormat(data);
+    const response = await api.put<{ success: boolean; data: Event }>(`/api/mgnt-sys-cse/events/${id}`, apiData);
     return response.data;
   },
   
