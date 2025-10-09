@@ -34,20 +34,58 @@ export interface User {
 }
 
 export interface Event {
+  // Identifiants
   id: string;
+  slug: string;
+  
+  // Informations principales
   title: string;
   subtitle: string | null;
-  slug: string;
   categoryTag: string | null;
   availabilityBadge: string | null;
+  
+  // Intervenants
   presenterName: string | null;
   organizerName: string | null;
+  organizerUrl: string | null;
+  
+  // Dates et horaires
   startsAt: string | null;
   endsAt: string | null;
+  timezone: string | null;
+  rawDatetimeLabel: string | null;
+  
+  // Localisation
   venueName: string | null;
+  addressLine1: string | null;
+  postalCode: string | null;
   city: string | null;
+  region: string | null;
+  country: string | null;
+  fullAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  
+  // Tarification
+  minPriceCents: number | null;
+  currency: string | null;
+  ticketStatus: string | null;
+  externalBookingUrl: string | null;
+  
+  // Médias
   coverImageUrl: string | null;
+  galleryUrls: string[];
+  
+  // Contenu
+  descriptionHtml: string | null;
+  infoPratiquesJson: any;
+  policyJson: any;
+  
+  // Statut
   status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  source: string | null;
+  
+  // Timestamps
   createdAt: string;
   updatedAt: string;
 }
@@ -72,19 +110,55 @@ export const usersApi = {
 
 // Helper: Convertir Event (camelCase) vers format API (snake_case)
 const eventToApiFormat = (data: Partial<Event>) => ({
+  // Identifiants
   title: data.title,
-  subtitle: data.subtitle,
   slug: data.slug,
+  
+  // Informations principales
+  subtitle: data.subtitle,
   category_tag: data.categoryTag,
   availability_badge: data.availabilityBadge,
+  
+  // Intervenants
   presenter_name: data.presenterName,
   organizer_name: data.organizerName,
+  organizer_url: data.organizerUrl,
+  
+  // Dates et horaires
   starts_at: data.startsAt,
   ends_at: data.endsAt,
+  timezone: data.timezone || 'Europe/Paris',
+  raw_datetime_label: data.rawDatetimeLabel,
+  
+  // Localisation
   venue_name: data.venueName,
+  address_line1: data.addressLine1,
+  postal_code: data.postalCode,
   city: data.city,
+  region: data.region,
+  country: data.country,
+  full_address: data.fullAddress,
+  latitude: data.latitude,
+  longitude: data.longitude,
+  
+  // Tarification
+  min_price_cents: data.minPriceCents,
+  currency: data.currency || 'EUR',
+  ticket_status: data.ticketStatus,
+  external_booking_url: data.externalBookingUrl,
+  
+  // Médias
   cover_image_url: data.coverImageUrl,
-  status: data.status,
+  gallery_urls: data.galleryUrls || [],
+  
+  // Contenu
+  description_html: data.descriptionHtml,
+  info_pratiques_json: data.infoPratiquesJson,
+  policy_json: data.policyJson,
+  
+  // Statut
+  status: data.status || 'scheduled',
+  source: data.source,
 });
 
 // API Endpoints - Events
