@@ -78,8 +78,8 @@ export interface Event {
   
   // Contenu
   descriptionHtml: string | null;
-  infoPratiquesJson: any;
-  policyJson: any;
+  infoPratiquesJson: Record<string, unknown> | null;
+  policyJson: Record<string, unknown> | null;
   
   // Statut
   status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';

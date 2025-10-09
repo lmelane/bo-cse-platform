@@ -6,7 +6,7 @@ import { eventsApi, Event } from '@/lib/api';
 import EventFormModal from '@/components/EventFormModal';
 import { 
   Calendar, Search, Loader2, AlertCircle, Plus, Edit, Trash2, 
-  Globe, EyeOff, FileText, MoreVertical, X 
+  Globe, EyeOff, FileText, MoreVertical 
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
