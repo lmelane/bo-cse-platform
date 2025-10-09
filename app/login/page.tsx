@@ -35,7 +35,7 @@ export default function LoginPage() {
             <Lock className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-neutral-900">Admin CSE</h1>
-          <p className="text-neutral-600 mt-2">Connectez-vous au back-office</p>
+          <p className="text-neutral-600 mt-2">Connexion</p>
         </div>
 
         {/* Carte de connexion */}
