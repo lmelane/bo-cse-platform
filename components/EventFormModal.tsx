@@ -1,8 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Event } from '@/lib/api';
 import { X, Loader2, Calendar, MapPin, Tag, Image as ImageIcon } from 'lucide-react';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 interface EventFormModalProps {
   isOpen: boolean;
@@ -612,21 +616,25 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
             {/* Description */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900">Description</h3>
+              <h3 className="font-semibold text-neutral-900">Description de l&apos;événement</h3>
               
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Description HTML
-                </label>
-                <textarea
-                  name="descriptionHtml"
+                <ReactQuill
+                  theme="snow"
                   value={formData.descriptionHtml ?? ''}
-                  onChange={handleChange}
-                  rows={6}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent font-mono text-sm"
-                  placeholder="<p>Description complète de l'événement...</p>"
+                  onChange={(value) => setFormData(prev => ({ ...prev, descriptionHtml: value }))}
+                  className="bg-white rounded-lg"
+                  modules={{
+                    toolbar: [
+                      [{ 'header': [1, 2, 3, false] }],
+                      ['bold', 'italic', 'underline', 'strike'],
+                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                      ['link'],
+                      ['clean']
+                    ],
+                  }}
+                  placeholder="Décrivez l'événement en détail..."
                 />
-                <p className="text-xs text-neutral-500 mt-1">Utilisez du HTML pour formatter le texte</p>
               </div>
             </div>
 
