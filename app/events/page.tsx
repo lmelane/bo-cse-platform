@@ -3,15 +3,24 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { eventsApi, Event } from '@/lib/api';
-import { Calendar, Search, Loader2, AlertCircle } from 'lucide-react';
+import EventFormModal from '@/components/EventFormModal';
+import { 
+  Calendar, Search, Loader2, AlertCircle, Plus, Edit, Trash2, 
+  Globe, EyeOff, FileText, MoreVertical, X 
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     loadEvents();
@@ -26,9 +35,72 @@ export default function EventsPage() {
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Erreur lors du chargement des événements');
+      toast.error('Erreur lors du chargement des événements');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreate = () => {
+    setSelectedEvent(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (event: Event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const handleSubmit = async (data: Partial<Event>) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (selectedEvent) {
+        // Mise à jour
+        await eventsApi.update(selectedEvent.id, data);
+        toast.success('Événement mis à jour avec succès !');
+      } else {
+        // Création
+        await eventsApi.create(data);
+        toast.success('Événement créé avec succès !');
+      }
+      
+      setIsModalOpen(false);
+      await loadEvents();
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Une erreur est survenue');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (event: Event) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${event.title}" ?`)) return;
+    
+    try {
+      await eventsApi.delete(event.id);
+      toast.success('Événement supprimé');
+      await loadEvents();
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Erreur lors de la suppression');
+    }
+    setOpenMenuId(null);
+  };
+
+  const handlePublicationChange = async (event: Event, state: 'online' | 'offline' | 'draft') => {
+    try {
+      await eventsApi.updatePublication(event.id, state);
+      const stateLabels = { online: 'en ligne', offline: 'hors ligne', draft: 'en brouillon' };
+      toast.success(`Événement mis ${stateLabels[state]}`);
+      await loadEvents();
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour');
+    }
+    setOpenMenuId(null);
   };
 
   const filteredEvents = events.filter(event => 
@@ -79,6 +151,13 @@ export default function EventsPage() {
               {events.length} événement{events.length > 1 ? 's' : ''} au total
             </p>
           </div>
+          <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            Créer un événement
+          </button>
         </div>
 
         {/* Barre de recherche */}
@@ -115,9 +194,18 @@ export default function EventsPage() {
             <h3 className="text-lg font-semibold text-neutral-900 mb-2">
               Aucun événement trouvé
             </h3>
-            <p className="text-neutral-600">
+            <p className="text-neutral-600 mb-4">
               {searchTerm ? 'Essayez une autre recherche.' : 'Aucun événement disponible.'}
             </p>
+            {!searchTerm && (
+              <button
+                onClick={handleCreate}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Créer le premier événement
+              </button>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
@@ -139,6 +227,9 @@ export default function EventsPage() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
                       Catégorie
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -202,6 +293,70 @@ export default function EventsPage() {
                           <span className="text-sm text-neutral-400">-</span>
                         )}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenMenuId(openMenuId === event.id ? null : event.id)}
+                            className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+                          >
+                            <MoreVertical className="w-5 h-5 text-neutral-600" />
+                          </button>
+                          
+                          {openMenuId === event.id && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-10"
+                                onClick={() => setOpenMenuId(null)}
+                              />
+                              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20">
+                                <button
+                                  onClick={() => handleEdit(event)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  Modifier
+                                </button>
+                                
+                                <div className="border-t border-neutral-200 my-1" />
+                                
+                                <button
+                                  onClick={() => handlePublicationChange(event, 'online')}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-green-700"
+                                >
+                                  <Globe className="w-4 h-4" />
+                                  Mettre en ligne
+                                </button>
+                                
+                                <button
+                                  onClick={() => handlePublicationChange(event, 'offline')}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-orange-700"
+                                >
+                                  <EyeOff className="w-4 h-4" />
+                                  Mettre hors ligne
+                                </button>
+                                
+                                <button
+                                  onClick={() => handlePublicationChange(event, 'draft')}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  Mettre en brouillon
+                                </button>
+                                
+                                <div className="border-t border-neutral-200 my-1" />
+                                
+                                <button
+                                  onClick={() => handleDelete(event)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Supprimer
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -210,6 +365,15 @@ export default function EventsPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de création/édition */}
+      <EventFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmit}
+        event={selectedEvent}
+        isLoading={isSubmitting}
+      />
     </AdminLayout>
   );
 }
