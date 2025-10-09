@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Event } from '@/lib/api';
 import { X, Loader2, Calendar, MapPin, Tag, Image as ImageIcon } from 'lucide-react';
+
+const RichTextEditor = dynamic(() => import('./RichTextEditor'), { ssr: false });
 
 interface EventFormModalProps {
   isOpen: boolean;
@@ -568,17 +571,11 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
               <h3 className="font-semibold text-neutral-900">Description de l&apos;événement</h3>
               
               <div>
-                <textarea
-                  name="descriptionHtml"
+                <RichTextEditor
                   value={formData.descriptionHtml ?? ''}
-                  onChange={handleChange}
-                  rows={12}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-y"
-                  placeholder="Décrivez l'événement en détail...&#10;&#10;💡 Vous pouvez utiliser du HTML basique :&#10;<p>Paragraphe</p>&#10;<strong>Texte en gras</strong>&#10;<ul><li>Liste à puces</li></ul>"
+                  onChange={(html) => setFormData(prev => ({ ...prev, descriptionHtml: html }))}
+                  placeholder="Décrivez l'événement en détail..."
                 />
-                <p className="text-xs text-neutral-500 mt-2">
-                  💡 Astuce : Utilisez du HTML pour formater le texte (balises &lt;p&gt;, &lt;strong&gt;, &lt;ul&gt;, &lt;li&gt;, etc.)
-                </p>
               </div>
             </div>
 
