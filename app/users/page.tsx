@@ -22,8 +22,9 @@ export default function UsersPage() {
       setError(null);
       const response = await usersApi.getAll();
       setUsers(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors du chargement des utilisateurs');
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Erreur lors du chargement des utilisateurs');
       console.error('Error loading users:', err);
     } finally {
       setLoading(false);
@@ -42,8 +43,9 @@ export default function UsersPage() {
       await usersApi.updateRole(userId, newRole);
       // Recharger la liste
       await loadUsers();
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Erreur lors de la mise à jour du rôle');
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      alert(error.response?.data?.message || 'Erreur lors de la mise à jour du rôle');
       console.error('Error updating role:', err);
     } finally {
       setUpdatingUserId(null);
@@ -220,7 +222,7 @@ export default function UsersPage() {
               Aucun utilisateur
             </h3>
             <p className="text-neutral-600">
-              Il n'y a aucun utilisateur enregistré pour le moment.
+              Il n&apos;y a aucun utilisateur enregistré pour le moment.
             </p>
           </div>
         )}

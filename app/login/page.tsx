@@ -18,8 +18,9 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-    } catch (err: any) {
-      setError(err.message || 'Erreur de connexion');
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message || 'Erreur de connexion');
     } finally {
       setLoading(false);
     }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { eventsApi, Event } from '@/lib/api';
-import { Calendar, Search, Eye, Ban, Globe, FileText, Loader2, AlertCircle } from 'lucide-react';
+import { Calendar, Search, Loader2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -23,8 +23,9 @@ export default function EventsPage() {
       setError('');
       const response = await eventsApi.getAll();
       setEvents(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erreur lors du chargement des événements');
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Erreur lors du chargement des événements');
     } finally {
       setLoading(false);
     }
@@ -147,6 +148,7 @@ export default function EventsPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-start gap-3">
                           {event.coverImageUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img 
                               src={event.coverImageUrl} 
                               alt={event.title}

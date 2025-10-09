@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-brand mx-auto mb-4" />
-          <p className="text-neutral-600">Vérification de l'authentification...</p>
+          <p className="text-neutral-600">Vérification de l&apos;authentification...</p>
         </div>
       </div>
     );
