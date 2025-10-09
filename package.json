@@ -2,24 +2,33 @@
   "name": "sys-mgnt-cse-admin",
   "version": "0.1.0",
   "private": true,
+  "description": "Back-office admin CSE - Next.js",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 3002",
     "build": "next build --turbopack",
-    "start": "next start",
+    "start": "next start -p 3002",
     "lint": "eslint"
   },
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.4"
+    "next": "15.5.4",
+    "lucide-react": "^0.545.0",
+    "axios": "^1.12.2",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1",
+    "react-hook-form": "^7.64.0",
+    "zod": "^4.1.12",
+    "sonner": "^2.0.7",
+    "@hookform/resolvers": "^5.2.2"
   },
   "devDependencies": {
     "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "tailwindcss": "^3.4.18",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "@eslint/eslintrc": "^3"

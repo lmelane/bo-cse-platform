@@ -1,0 +1,115 @@
+import axios from 'axios';
+import { tokenStorage } from './auth';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const ADMIN_API_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN || '';
+
+// Instance axios configurée
+export const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Intercepteur pour ajouter le token admin aux requêtes mgnt
+api.interceptors.request.use((config) => {
+  // Pour les routes mgnt-sys-cse, utiliser le token admin
+  if (config.url?.includes('/api/mgnt-sys-cse/')) {
+    config.headers.Authorization = `Bearer ${ADMIN_API_TOKEN}`;
+  } else {
+    // Pour les autres routes, utiliser le token d'authentification utilisateur
+    const userToken = tokenStorage.get();
+    if (userToken) {
+      config.headers.Authorization = `Bearer ${userToken}`;
+    }
+  }
+  return config;
+});
+
+// Types
+export interface User {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  association: string | null;
+  role: 'user' | 'admin';
+  onboardingCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  slug: string;
+  categoryTag: string | null;
+  availabilityBadge: string | null;
+  presenterName: string | null;
+  organizerName: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  venueName: string | null;
+  city: string | null;
+  status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// API Endpoints - Users
+export const usersApi = {
+  getAll: async () => {
+    const response = await api.get<{ success: boolean; count: number; data: User[] }>('/api/mgnt-sys-cse/users');
+    return response.data;
+  },
+  
+  getById: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: User }>(`/api/mgnt-sys-cse/users/${id}`);
+    return response.data;
+  },
+  
+  updateRole: async (id: string, role: 'user' | 'admin') => {
+    const response = await api.patch<{ success: boolean; data: User }>(`/api/mgnt-sys-cse/users/${id}/role`, { role });
+    return response.data;
+  },
+};
+
+// API Endpoints - Events
+export const eventsApi = {
+  getAll: async () => {
+    const response = await api.get<{ success: boolean; count: number; data: Event[] }>('/api/mgnt-sys-cse/events');
+    return response.data;
+  },
+  
+  getById: async (id: string) => {
+    const response = await api.get<{ success: boolean; data: Event }>(`/api/mgnt-sys-cse/events/${id}`);
+    return response.data;
+  },
+  
+  create: async (data: Partial<Event>) => {
+    const response = await api.post<{ success: boolean; data: Event }>('/api/mgnt-sys-cse/events', data);
+    return response.data;
+  },
+  
+  update: async (id: string, data: Partial<Event>) => {
+    const response = await api.put<{ success: boolean; data: Event }>(`/api/mgnt-sys-cse/events/${id}`, data);
+    return response.data;
+  },
+  
+  delete: async (id: string) => {
+    const response = await api.delete<{ success: boolean }>(`/api/mgnt-sys-cse/events/${id}`);
+    return response.data;
+  },
+  
+  cancel: async (id: string) => {
+    const response = await api.patch<{ success: boolean; data: Event }>(`/api/mgnt-sys-cse/events/${id}/cancel`);
+    return response.data;
+  },
+  
+  updatePublication: async (id: string, publicationState: 'online' | 'offline' | 'draft') => {
+    const response = await api.patch<{ success: boolean; data: Event }>(`/api/mgnt-sys-cse/events/${id}/publication`, { publication_state: publicationState });
+    return response.data;
+  },
+};

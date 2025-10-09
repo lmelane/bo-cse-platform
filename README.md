@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Admin CSE - Back-office
 
-## Getting Started
+Interface d'administration pour la plateforme d'événements CSE.
 
-First, run the development server:
+## 🚀 Stack Technique
+
+- **Framework**: Next.js 15.5.4 avec App Router
+- **Styling**: TailwindCSS 3.4
+- **UI**: Lucide React pour les icônes
+- **API Client**: Axios
+- **Forms**: React Hook Form + Zod
+- **Language**: TypeScript
+
+## 📦 Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Installer les dépendances
+npm install
+
+# Créer le fichier .env.local
+echo 'NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_ADMIN_TOKEN=IVNsZsL3HuXGS+1XGS94SxW+cDjelE/VV3wFCSVW7XQ=' > .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔧 Configuration
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Le fichier `.env.local` doit contenir :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_ADMIN_TOKEN=<votre-token-admin>
+```
 
-## Learn More
+## 🏃 Démarrage
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Lancer le serveur de développement
+npm run dev
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# L'application sera accessible sur http://localhost:3002
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Important** : Assurez-vous que l'API principale (app-cse) tourne sur le port 3001 avant de démarrer le back-office.
 
-## Deploy on Vercel
+## 📁 Structure du Projet
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+sys-mgnt-cse-admin/
+├── app/
+│   ├── page.tsx           # Dashboard
+│   ├── users/
+│   │   └── page.tsx       # Gestion des utilisateurs
+│   ├── events/
+│   │   └── page.tsx       # Gestion des événements
+│   └── layout.tsx
+├── components/
+│   ├── Sidebar.tsx        # Menu de navigation
+│   └── AdminLayout.tsx    # Layout principal
+├── lib/
+│   ├── api.ts            # Client API
+│   └── utils.ts          # Utilitaires
+└── .env.local            # Variables d'environnement
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ✨ Fonctionnalités
+
+### Gestion des Utilisateurs
+- ✅ Lister tous les utilisateurs
+- ✅ Voir les détails (email, nom, association, rôle)
+- ✅ Promouvoir/Rétrograder les rôles (user ↔ admin)
+- ✅ Voir le statut d'onboarding
+
+### Gestion des Événements (à venir)
+- Lister tous les événements
+- Créer/Modifier/Supprimer des événements
+- Changer le statut de publication
+- Annuler des événements
+
+## 🎨 Design System
+
+Le back-office utilise le même design system que l'application principale CSE :
+- **Couleur principale** : Brand (#A32144)
+- **Typographie** : Poppins
+- **Composants** : Design minimaliste et épuré
+
+## 🔒 Sécurité
+
+Toutes les requêtes vers l'API sont authentifiées avec le token admin défini dans `.env.local`. Ce token doit correspondre à la variable `ADMIN_API_TOKEN` configurée dans l'API principale.
+
+## 📝 Scripts
+
+```bash
+npm run dev      # Démarrer en mode développement (port 3002)
+npm run build    # Build de production
+npm run start    # Démarrer en mode production
+npm run lint     # Linter le code
+```
+
+## 🔗 API Endpoints Utilisés
+
+- `GET /api/mgnt-sys-cse/users` - Liste des utilisateurs
+- `GET /api/mgnt-sys-cse/users/:id` - Détails d'un utilisateur
+- `PATCH /api/mgnt-sys-cse/users/:id/role` - Changer le rôle
+- `GET /api/mgnt-sys-cse/events` - Liste des événements
+- `POST /api/mgnt-sys-cse/events` - Créer un événement
+- `PUT /api/mgnt-sys-cse/events/:id` - Modifier un événement
+- `DELETE /api/mgnt-sys-cse/events/:id` - Supprimer un événement
+
+## 🛠️ Développement
+
+L'application est configurée pour fonctionner avec Turbopack pour un développement ultra-rapide.
+
+Pour contribuer :
+1. Cloner le dépôt
+2. Installer les dépendances
+3. Configurer `.env.local`
+4. Lancer `npm run dev`
+
+## 📄 License
+
+Private - Plateforme CSE
