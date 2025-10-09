@@ -151,9 +151,35 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
     }
   }, [event, isOpen]);
 
+  // Auto-génération du slug depuis le titre (sauf si modifié manuellement)
+  useEffect(() => {
+    if (!event && formData.title) {
+      const slug = formData.title
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      setFormData(prev => ({ ...prev, slug }));
+    }
+  }, [formData.title, event]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handler spécifique pour le slug avec formatage automatique
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
+      .replace(/[^a-z0-9-]/g, '-')      // Remplacer caractères invalides par -
+      .replace(/-+/g, '-')              // Remplacer multiple - par un seul
+      .replace(/^-|-$/g, '');           // Supprimer - au début/fin
+    
+    setFormData(prev => ({ ...prev, slug: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -240,8 +266,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       type="text"
                       name="slug"
                       value={formData.slug}
-                      onChange={handleChange}
+                      onChange={handleSlugChange}
                       required
+                      pattern="[a-z0-9-]+"
                       className="flex-1 px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent font-mono text-sm"
                       placeholder="mon-evenement-2024"
                     />
