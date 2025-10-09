@@ -23,18 +23,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
     subtitle: '',
     slug: '',
     categoryTag: '',
-    availabilityBadge: '',
     
     // Intervenants
     presenterName: '',
     organizerName: '',
-    organizerUrl: '',
     
     // Dates et horaires
     startsAt: '',
     endsAt: '',
-    timezone: 'Europe/Paris',
-    rawDatetimeLabel: '',
     
     // Localisation
     venueName: '',
@@ -49,13 +45,11 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
     
     // Tarification
     minPriceCents: 0,
-    currency: 'EUR',
     ticketStatus: 'available',
     externalBookingUrl: '',
     
     // Médias
     coverImageUrl: '',
-    galleryUrls: [],
     
     // Contenu
     descriptionHtml: '',
@@ -73,18 +67,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         subtitle: event.subtitle ?? '',
         slug: event.slug ?? '',
         categoryTag: event.categoryTag ?? '',
-        availabilityBadge: event.availabilityBadge ?? '',
         
         // Intervenants
         presenterName: event.presenterName ?? '',
         organizerName: event.organizerName ?? '',
-        organizerUrl: event.organizerUrl ?? '',
         
         // Dates et horaires
         startsAt: event.startsAt ?? '',
         endsAt: event.endsAt ?? '',
-        timezone: event.timezone ?? 'Europe/Paris',
-        rawDatetimeLabel: event.rawDatetimeLabel ?? '',
         
         // Localisation
         venueName: event.venueName ?? '',
@@ -105,7 +95,6 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         
         // Médias
         coverImageUrl: event.coverImageUrl ?? '',
-        galleryUrls: event.galleryUrls ?? [],
         
         // Contenu
         descriptionHtml: event.descriptionHtml ?? '',
@@ -121,14 +110,10 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         subtitle: '',
         slug: '',
         categoryTag: '',
-        availabilityBadge: '',
         presenterName: '',
         organizerName: '',
-        organizerUrl: '',
         startsAt: '',
         endsAt: '',
-        timezone: 'Europe/Paris',
-        rawDatetimeLabel: '',
         venueName: '',
         addressLine1: '',
         postalCode: '',
@@ -143,7 +128,6 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         ticketStatus: 'available',
         externalBookingUrl: '',
         coverImageUrl: '',
-        galleryUrls: [],
         descriptionHtml: '',
         status: 'scheduled',
         publicationStatus: 'draft',
@@ -298,20 +282,6 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Badge de disponibilité
-                  </label>
-                  <input
-                    type="text"
-                    name="availabilityBadge"
-                    value={formData.availabilityBadge ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="Places limitées, Complet..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Statut de l&apos;événement
                   </label>
                   <select
@@ -379,37 +349,6 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Fuseau horaire
-                  </label>
-                  <select
-                    name="timezone"
-                    value={formData.timezone ?? 'Europe/Paris'}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    <option value="Europe/Paris">Europe/Paris</option>
-                    <option value="Europe/London">Europe/London</option>
-                    <option value="America/New_York">America/New_York</option>
-                    <option value="America/Los_Angeles">America/Los_Angeles</option>
-                    <option value="Asia/Tokyo">Asia/Tokyo</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Label date personnalisé
-                  </label>
-                  <input
-                    type="text"
-                    name="rawDatetimeLabel"
-                    value={formData.rawDatetimeLabel ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="Ex: Vendredi 22 novembre à 19h00"
-                  />
-                </div>
               </div>
             </div>
 
@@ -554,19 +493,6 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    URL de l&apos;organisateur
-                  </label>
-                  <input
-                    type="url"
-                    name="organizerUrl"
-                    value={formData.organizerUrl ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="https://example.com"
-                  />
-                </div>
               </div>
             </div>
 
@@ -699,20 +625,6 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  URLs galerie d&apos;images (une par ligne)
-                </label>
-                <textarea
-                  name="galleryUrls"
-                  value={formData.galleryUrls?.join('\n') ?? ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, galleryUrls: e.target.value.split('\n').filter(url => url.trim() !== '') }))}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent font-mono text-sm"
-                  placeholder="https://example.com/gallery1.jpg&#10;https://example.com/gallery2.jpg"
-                />
-                <p className="text-xs text-neutral-500 mt-1">Une URL par ligne</p>
-              </div>
             </div>
           </div>
 

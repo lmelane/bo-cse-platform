@@ -42,18 +42,14 @@ export interface Event {
   title: string;
   subtitle: string | null;
   categoryTag: string | null;
-  availabilityBadge: string | null;
   
   // Intervenants
   presenterName: string | null;
   organizerName: string | null;
-  organizerUrl: string | null;
   
   // Dates et horaires
   startsAt: string | null;
   endsAt: string | null;
-  timezone: string | null;
-  rawDatetimeLabel: string | null;
   
   // Localisation
   venueName: string | null;
@@ -74,7 +70,6 @@ export interface Event {
   
   // Médias
   coverImageUrl: string | null;
-  galleryUrls: string[];
   
   // Contenu
   descriptionHtml: string | null;
@@ -118,18 +113,14 @@ const eventToApiFormat = (data: Partial<Event>) => ({
   // Informations principales
   subtitle: data.subtitle,
   category_tag: data.categoryTag,
-  availability_badge: data.availabilityBadge,
   
   // Intervenants
   presenter_name: data.presenterName,
   organizer_name: data.organizerName,
-  organizer_url: data.organizerUrl,
   
   // Dates et horaires
   starts_at: data.startsAt,
   ends_at: data.endsAt,
-  timezone: data.timezone || 'Europe/Paris',
-  raw_datetime_label: data.rawDatetimeLabel,
   
   // Localisation
   venue_name: data.venueName,
@@ -150,7 +141,6 @@ const eventToApiFormat = (data: Partial<Event>) => ({
   
   // Médias
   cover_image_url: data.coverImageUrl,
-  gallery_urls: data.galleryUrls || [],
   
   // Contenu
   description_html: data.descriptionHtml,
