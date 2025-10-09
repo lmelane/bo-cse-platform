@@ -14,36 +14,98 @@ interface EventFormModalProps {
 
 export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoading }: EventFormModalProps) {
   const [formData, setFormData] = useState<Partial<Event>>({
+    // Informations principales
     title: '',
     subtitle: '',
     slug: '',
     categoryTag: '',
     availabilityBadge: '',
+    
+    // Intervenants
     presenterName: '',
     organizerName: '',
+    organizerUrl: '',
+    
+    // Dates et horaires
     startsAt: '',
     endsAt: '',
+    timezone: 'Europe/Paris',
+    rawDatetimeLabel: '',
+    
+    // Localisation
     venueName: '',
+    addressLine1: '',
+    postalCode: '',
     city: '',
+    region: '',
+    country: '',
+    fullAddress: '',
+    latitude: null,
+    longitude: null,
+    
+    // Tarification
+    minPriceCents: 0,
+    currency: 'EUR',
+    ticketStatus: 'available',
+    externalBookingUrl: '',
+    
+    // Médias
     coverImageUrl: '',
+    galleryUrls: [],
+    
+    // Contenu
+    descriptionHtml: '',
+    
+    // Statut
     status: 'scheduled',
   });
 
   useEffect(() => {
     if (event) {
       setFormData({
+        // Informations principales
         title: event.title ?? '',
         subtitle: event.subtitle ?? '',
         slug: event.slug ?? '',
         categoryTag: event.categoryTag ?? '',
         availabilityBadge: event.availabilityBadge ?? '',
+        
+        // Intervenants
         presenterName: event.presenterName ?? '',
         organizerName: event.organizerName ?? '',
+        organizerUrl: event.organizerUrl ?? '',
+        
+        // Dates et horaires
         startsAt: event.startsAt ?? '',
         endsAt: event.endsAt ?? '',
+        timezone: event.timezone ?? 'Europe/Paris',
+        rawDatetimeLabel: event.rawDatetimeLabel ?? '',
+        
+        // Localisation
         venueName: event.venueName ?? '',
+        addressLine1: event.addressLine1 ?? '',
+        postalCode: event.postalCode ?? '',
         city: event.city ?? '',
+        region: event.region ?? '',
+        country: event.country ?? '',
+        fullAddress: event.fullAddress ?? '',
+        latitude: event.latitude,
+        longitude: event.longitude,
+        
+        // Tarification
+        minPriceCents: event.minPriceCents ?? 0,
+        currency: event.currency ?? 'EUR',
+        ticketStatus: event.ticketStatus ?? 'available',
+        externalBookingUrl: event.externalBookingUrl ?? '',
+        
+        // Médias
         coverImageUrl: event.coverImageUrl ?? '',
+        galleryUrls: event.galleryUrls ?? [],
+        
+        // Contenu
+        descriptionHtml: event.descriptionHtml ?? '',
+        
+        // Statut
         status: event.status ?? 'scheduled',
       });
     } else {
@@ -56,11 +118,27 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         availabilityBadge: '',
         presenterName: '',
         organizerName: '',
+        organizerUrl: '',
         startsAt: '',
         endsAt: '',
+        timezone: 'Europe/Paris',
+        rawDatetimeLabel: '',
         venueName: '',
+        addressLine1: '',
+        postalCode: '',
         city: '',
+        region: '',
+        country: '',
+        fullAddress: '',
+        latitude: null,
+        longitude: null,
+        minPriceCents: 0,
+        currency: 'EUR',
+        ticketStatus: 'available',
+        externalBookingUrl: '',
         coverImageUrl: '',
+        galleryUrls: [],
+        descriptionHtml: '',
         status: 'scheduled',
       });
     }
@@ -250,6 +328,38 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Fuseau horaire
+                  </label>
+                  <select
+                    name="timezone"
+                    value={formData.timezone ?? 'Europe/Paris'}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  >
+                    <option value="Europe/Paris">Europe/Paris</option>
+                    <option value="Europe/London">Europe/London</option>
+                    <option value="America/New_York">America/New_York</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles</option>
+                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Label date personnalisé
+                  </label>
+                  <input
+                    type="text"
+                    name="rawDatetimeLabel"
+                    value={formData.rawDatetimeLabel ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="Ex: Vendredi 22 novembre à 19h00"
+                  />
+                </div>
               </div>
             </div>
 
@@ -261,9 +371,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Lieu
+                    Nom du lieu
                   </label>
                   <input
                     type="text"
@@ -271,7 +381,35 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     value={formData.venueName ?? ''}
                     onChange={handleChange}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="Nom du lieu"
+                    placeholder="Station F, Salle Pleyel..."
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Adresse
+                  </label>
+                  <input
+                    type="text"
+                    name="addressLine1"
+                    value={formData.addressLine1 ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="5 Parvis Alan Turing"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Code postal
+                  </label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={formData.postalCode ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="75013"
                   />
                 </div>
 
@@ -285,7 +423,49 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     value={formData.city ?? ''}
                     onChange={handleChange}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="Paris, Lyon, Marseille..."
+                    placeholder="Paris"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Région
+                  </label>
+                  <input
+                    type="text"
+                    name="region"
+                    value={formData.region ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="Île-de-France"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Pays
+                  </label>
+                  <input
+                    type="text"
+                    name="country"
+                    value={formData.country ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="France"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Adresse complète (format texte)
+                  </label>
+                  <input
+                    type="text"
+                    name="fullAddress"
+                    value={formData.fullAddress ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="5 Parvis Alan Turing, 75013 Paris"
                   />
                 </div>
               </div>
@@ -323,6 +503,111 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     placeholder="Nom de l'organisateur"
                   />
                 </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    URL de l&apos;organisateur
+                  </label>
+                  <input
+                    type="url"
+                    name="organizerUrl"
+                    value={formData.organizerUrl ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Tarification */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-neutral-900">Tarification</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Prix minimum (en €)
+                  </label>
+                  <input
+                    type="number"
+                    name="minPriceCents"
+                    value={formData.minPriceCents ? formData.minPriceCents / 100 : 0}
+                    onChange={(e) => setFormData(prev => ({ ...prev, minPriceCents: parseFloat(e.target.value) * 100 }))}
+                    step="0.01"
+                    min="0"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="25.00"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">Prix converti automatiquement en centimes</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Devise
+                  </label>
+                  <select
+                    name="currency"
+                    value={formData.currency ?? 'EUR'}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  >
+                    <option value="EUR">EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="GBP">GBP (£)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Statut des billets
+                  </label>
+                  <select
+                    name="ticketStatus"
+                    value={formData.ticketStatus ?? 'available'}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  >
+                    <option value="available">Disponible</option>
+                    <option value="limited">Places limitées</option>
+                    <option value="sold_out">Complet</option>
+                    <option value="unknown">Inconnu</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    URL de réservation externe
+                  </label>
+                  <input
+                    type="url"
+                    name="externalBookingUrl"
+                    value={formData.externalBookingUrl ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="https://billetterie.example.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-neutral-900">Description</h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Description HTML
+                </label>
+                <textarea
+                  name="descriptionHtml"
+                  value={formData.descriptionHtml ?? ''}
+                  onChange={handleChange}
+                  rows={6}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent font-mono text-sm"
+                  placeholder="<p>Description complète de l'événement...</p>"
+                />
+                <p className="text-xs text-neutral-500 mt-1">Utilisez du HTML pour formatter le texte</p>
               </div>
             </div>
 
@@ -330,12 +615,12 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             <div className="space-y-4">
               <h3 className="font-semibold text-neutral-900 flex items-center gap-2">
                 <ImageIcon className="w-4 h-4" />
-                Image de couverture
+                Médias
               </h3>
               
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  URL de l&apos;image
+                  URL de l&apos;image de couverture
                 </label>
                 <input
                   type="url"
@@ -358,6 +643,21 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     />
                   </div>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  URLs galerie d&apos;images (une par ligne)
+                </label>
+                <textarea
+                  name="galleryUrls"
+                  value={formData.galleryUrls?.join('\n') ?? ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, galleryUrls: e.target.value.split('\n').filter(url => url.trim() !== '') }))}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent font-mono text-sm"
+                  placeholder="https://example.com/gallery1.jpg&#10;https://example.com/gallery2.jpg"
+                />
+                <p className="text-xs text-neutral-500 mt-1">Une URL par ligne</p>
               </div>
             </div>
           </div>
