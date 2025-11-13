@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { usersApi, eventsApi, participantsApi, type User, type Event, type GlobalParticipantsResponse } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
@@ -37,77 +37,85 @@ export default function DashboardPage() {
     }
   };
 
-  // Calculs financiers
-  const financialStats = {
-    // Revenus totaux des abonnements
-    totalRevenue: users.reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0),
-    
-    // MRR (Monthly Recurring Revenue) - approximation annuelle / 12
-    mrr: users
-      .filter(user => user.subscriptionStatus === 'ACTIVE')
-      .reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0) / 12,
-    
-    // ARR (Annual Recurring Revenue)
-    arr: users
-      .filter(user => user.subscriptionStatus === 'ACTIVE')
-      .reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0),
-    
-    // Nombre d'abonnements actifs
-    activeSubscriptions: users.filter(user => user.subscriptionStatus === 'ACTIVE').length,
-    
-    // Nombre d'abonnements inactifs/expirés
-    inactiveSubscriptions: users.filter(user => 
-      user.subscriptionStatus === 'INACTIVE' || user.subscriptionStatus === 'EXPIRED'
-    ).length,
-    
-    // Churn rate (approximation)
-    churnRate: users.length > 0 
-      ? (users.filter(user => user.subscriptionStatus === 'EXPIRED').length / users.length) * 100
-      : 0,
-    
-    // Répartition par type d'abonnement
-    eventBasedCount: users.filter(user => user.subscriptionType === 'event_based' && user.subscriptionStatus === 'ACTIVE').length,
-    unlimitedCount: users.filter(user => user.subscriptionType === 'unlimited' && user.subscriptionStatus === 'ACTIVE').length,
-    
-    // Revenus par type
-    eventBasedRevenue: users
-      .filter(user => user.subscriptionType === 'event_based' && user.subscriptionStatus === 'ACTIVE')
-      .reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0),
-    unlimitedRevenue: users
-      .filter(user => user.subscriptionType === 'unlimited' && user.subscriptionStatus === 'ACTIVE')
-      .reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0),
-    
-    // Taux de conversion (utilisateurs avec abonnement / total utilisateurs)
-    conversionRate: users.length > 0
-      ? (users.filter(user => user.subscriptionStatus === 'ACTIVE').length / users.length) * 100
-      : 0,
-    
-    // ARPU (Average Revenue Per User)
-    arpu: users.length > 0
-      ? users.reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0) / users.length
-      : 0,
-  };
+  // Calculs financiers (optimisés avec useMemo)
+  const financialStats = useMemo(() => {
+    return {
+      // Revenus totaux des abonnements
+      totalRevenue: users.reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0),
+      
+      // MRR (Monthly Recurring Revenue) - approximation annuelle / 12
+      mrr: users
+        .filter(user => user.subscriptionStatus === 'ACTIVE')
+        .reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0) / 12,
+      
+      // ARR (Annual Recurring Revenue)
+      arr: users
+        .filter(user => user.subscriptionStatus === 'ACTIVE')
+        .reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0),
+      
+      // Nombre d'abonnements actifs
+      activeSubscriptions: users.filter(user => user.subscriptionStatus === 'ACTIVE').length,
+      
+      // Nombre d'abonnements inactifs/expirés
+      inactiveSubscriptions: users.filter(user => 
+        user.subscriptionStatus === 'INACTIVE' || user.subscriptionStatus === 'EXPIRED'
+      ).length,
+      
+      // Churn rate (approximation)
+      churnRate: users.length > 0 
+        ? (users.filter(user => user.subscriptionStatus === 'EXPIRED').length / users.length) * 100
+        : 0,
+      
+      // Répartition par type d'abonnement
+      eventBasedCount: users.filter(user => user.subscriptionType === 'event_based' && user.subscriptionStatus === 'ACTIVE').length,
+      unlimitedCount: users.filter(user => user.subscriptionType === 'unlimited' && user.subscriptionStatus === 'ACTIVE').length,
+      
+      // Revenus par type
+      eventBasedRevenue: users
+        .filter(user => user.subscriptionType === 'event_based' && user.subscriptionStatus === 'ACTIVE')
+        .reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0),
+      unlimitedRevenue: users
+        .filter(user => user.subscriptionType === 'unlimited' && user.subscriptionStatus === 'ACTIVE')
+        .reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0),
+      
+      // Taux de conversion (utilisateurs avec abonnement / total utilisateurs)
+      conversionRate: users.length > 0
+        ? (users.filter(user => user.subscriptionStatus === 'ACTIVE').length / users.length) * 100
+        : 0,
+      
+      // ARPU (Average Revenue Per User)
+      arpu: users.length > 0
+        ? users.reduce((sum, user) => sum + (user.subscriptionPriceCents || 0), 0) / users.length
+        : 0,
+    };
+  }, [users]);
 
-  // Statistiques événements
-  const now = new Date();
-  const eventStats = {
-    total: events.length,
-    upcoming: events.filter(e => e.startsAt && new Date(e.startsAt) > now && e.status !== 'cancelled').length,
-    past: events.filter(e => e.startsAt && new Date(e.startsAt) <= now).length,
-    cancelled: events.filter(e => e.status === 'cancelled').length,
-    online: events.filter(e => e.publicationStatus === 'online').length,
-  };
+  // Statistiques événements (optimisées)
+  const eventStats = useMemo(() => {
+    const now = new Date();
+    return {
+      total: events.length,
+      upcoming: events.filter(e => e.startsAt && new Date(e.startsAt) > now && e.status !== 'cancelled').length,
+      past: events.filter(e => e.startsAt && new Date(e.startsAt) <= now).length,
+      cancelled: events.filter(e => e.status === 'cancelled').length,
+      online: events.filter(e => e.publicationStatus === 'online').length,
+    };
+  }, [events]);
 
-  // Statistiques participants
-  const participantStats = participants ? {
-    totalBookings: participants.stats.totalBookings,
-    totalGuests: participants.stats.totalGuests,
-    totalRevenue: participants.stats.totalRevenue,
-    averagePerEvent: eventStats.total > 0 ? (participants.stats.totalBookings / eventStats.total).toFixed(1) : '0',
-    conversionRate: users.length > 0 ? ((participants.stats.totalBookings / users.length) * 100).toFixed(1) : '0',
-    guestsValidated: participants.stats.guestsValidated,
-    guestsPending: participants.stats.guestsPending,
-  } : null;
+  // Statistiques participants (optimisées)
+  const participantStats = useMemo(() => {
+    if (!participants) return null;
+    
+    return {
+      totalBookings: participants.stats.totalBookings,
+      totalGuests: participants.stats.totalGuests,
+      totalRevenue: participants.stats.totalRevenue,
+      averagePerEvent: eventStats.total > 0 ? (participants.stats.totalBookings / eventStats.total).toFixed(1) : '0',
+      conversionRate: users.length > 0 ? ((participants.stats.totalBookings / users.length) * 100).toFixed(1) : '0',
+      guestsValidated: participants.stats.guestsValidated,
+      guestsPending: participants.stats.guestsPending,
+    };
+  }, [participants, eventStats.total, users.length]);
 
   const formatCurrency = (cents: number) => {
     return `${(cents / 100).toFixed(2)} €`;

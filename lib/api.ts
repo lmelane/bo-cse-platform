@@ -9,6 +9,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 secondes max par requête
 });
 
 // Intercepteur pour ajouter le token JWT à toutes les requêtes
@@ -19,6 +20,22 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Intercepteur de réponse pour gérer les erreurs d'authentification
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Si 401 (non autorisé), déconnecter l'utilisateur
+    if (error.response?.status === 401) {
+      tokenStorage.remove();
+      // Rediriger vers login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Types
 export interface User {
@@ -383,8 +400,13 @@ export const participantsApi = {
     if (params?.eventId) queryParams.append('eventId', params.eventId);
     if (params?.status) queryParams.append('status', params.status);
     if (params?.isPaid !== undefined) queryParams.append('isPaid', params.isPaid.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    
+    // Limite par défaut pour éviter de charger trop de données
+    const limit = params?.limit ?? 1000; // Max 1000 par défaut
+    const offset = params?.offset ?? 0;
+    
+    queryParams.append('limit', limit.toString());
+    queryParams.append('offset', offset.toString());
     
     const url = `/api/mgnt-sys-cse/participants${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await api.get<GlobalParticipantsResponse>(url);

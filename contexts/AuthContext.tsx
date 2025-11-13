@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authService, tokenStorage, type AuthUser } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { isTokenExpired } from '@/lib/jwt-utils';
+import toast from 'react-hot-toast';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -22,6 +24,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Vérifier le token au chargement
   useEffect(() => {
     checkAuth();
+  }, []);
+
+  // Vérifier périodiquement l'expiration du token
+  useEffect(() => {
+    const checkTokenExpiry = () => {
+      const token = tokenStorage.get();
+      if (token && isTokenExpired(token)) {
+        toast.error('Votre session a expiré. Veuillez vous reconnecter.');
+        logout();
+      }
+    };
+
+    // Vérifier toutes les minutes
+    const interval = setInterval(checkTokenExpiry, 60 * 1000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuth = async () => {

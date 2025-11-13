@@ -9,6 +9,7 @@ import { fr } from 'date-fns/locale';
 import ParticipantDetailsModal from '@/components/ParticipantDetailsModal';
 import { exportToCSV } from '@/lib/csv-utils';
 import toast from 'react-hot-toast';
+import { useDebounce } from 'use-debounce';
 
 export default function ParticipantsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -20,6 +21,7 @@ export default function ParticipantsPage() {
   const [selectedParticipant, setSelectedParticipant] = useState<GlobalParticipant | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300); // Debounce de 300ms
 
   // Charger la liste des événements au montage
   useEffect(() => {
@@ -169,13 +171,14 @@ export default function ParticipantsPage() {
     const filename = `participants_${eventName}_${new Date().toISOString().split('T')[0]}.csv`;
     
     exportToCSV(filename, headers, rows);
+    toast.success(`${rows.length} participants/invités exportés avec succès`);
   };
 
-  // Filtrer les participants par recherche
+  // Filtrer les participants par recherche (debouncée)
   const filteredParticipants = participantsData?.data.filter((participant) => {
-    if (!searchTerm) return true;
+    if (!debouncedSearchTerm) return true;
     
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = debouncedSearchTerm.toLowerCase();
     const firstName = participant.holder.firstName?.toLowerCase() || '';
     const lastName = participant.holder.lastName?.toLowerCase() || '';
     const email = participant.holder.email?.toLowerCase() || '';

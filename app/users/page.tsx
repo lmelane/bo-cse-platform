@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { usersApi, type User } from '@/lib/api';
 import { User as UserIcon, Shield, ShieldOff, Loader2, Euro, TrendingUp, MoreVertical, Search, Filter, Download } from 'lucide-react';
 import { exportToCSV } from '@/lib/csv-utils';
 import toast from 'react-hot-toast';
+import { useDebounce } from 'use-debounce';
+import Pagination from '@/components/Pagination';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -16,8 +18,13 @@ export default function UsersPage() {
   
   // Filtres et recherche
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300); // Debounce de 300ms
   const [filterType, setFilterType] = useState<'all' | 'event_based' | 'unlimited'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED'>('all');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
 
   // Charger les utilisateurs
   useEffect(() => {
@@ -117,25 +124,43 @@ export default function UsersPage() {
     });
   };
 
-  // Filtrer les utilisateurs
-  const filteredUsers = users.filter((user) => {
-    // Recherche par nom, prénom, email
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = 
-      !searchTerm || 
-      user.email.toLowerCase().includes(searchLower) ||
-      user.firstName?.toLowerCase().includes(searchLower) ||
-      user.lastName?.toLowerCase().includes(searchLower) ||
-      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower);
+  // Filtrer les utilisateurs (avec debounce sur la recherche)
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      // Recherche par nom, prénom, email (debouncée)
+      const searchLower = debouncedSearchTerm.toLowerCase();
+      const matchesSearch = 
+        !debouncedSearchTerm || 
+        user.email.toLowerCase().includes(searchLower) ||
+        user.firstName?.toLowerCase().includes(searchLower) ||
+        user.lastName?.toLowerCase().includes(searchLower) ||
+        `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower);
+      
+      // Filtre par type d'abonnement
+      const matchesType = filterType === 'all' || user.subscriptionType === filterType;
+      
+      // Filtre par statut d'abonnement
+      const matchesStatus = filterStatus === 'all' || user.subscriptionStatus === filterStatus;
+      
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [users, debouncedSearchTerm, filterType, filterStatus]);
+
+  // Calculer les données paginées
+  const { paginatedUsers, totalPages } = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
     
-    // Filtre par type d'abonnement
-    const matchesType = filterType === 'all' || user.subscriptionType === filterType;
-    
-    // Filtre par statut d'abonnement
-    const matchesStatus = filterStatus === 'all' || user.subscriptionStatus === filterStatus;
-    
-    return matchesSearch && matchesType && matchesStatus;
-  });
+    return {
+      paginatedUsers: filteredUsers.slice(startIndex, endIndex),
+      totalPages: Math.ceil(filteredUsers.length / ITEMS_PER_PAGE),
+    };
+  }, [filteredUsers, currentPage, ITEMS_PER_PAGE]);
+
+  // Réinitialiser à la page 1 quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, filterType, filterStatus]);
 
   // Calculer les statistiques d'abonnements (basées sur les utilisateurs filtrés)
   const subscriptionStats = {
@@ -329,7 +354,7 @@ export default function UsersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200">
-                  {filteredUsers.map((user) => (
+                  {paginatedUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-neutral-50 transition-colors">
                       {/* Utilisateur */}
                       <td className="px-6 py-4">
@@ -468,6 +493,15 @@ export default function UsersPage() {
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredUsers.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
 

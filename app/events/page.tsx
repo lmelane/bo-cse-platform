@@ -7,7 +7,7 @@ import EventFormModal from '@/components/EventFormModal';
 import { 
   Calendar, Search, Loader2, AlertCircle, Plus, Edit, Trash2, 
   Globe, EyeOff, FileText, MoreVertical, Users, UserCheck, Euro, 
-  CheckCircle, Clock, XCircle
+  CheckCircle, Clock, XCircle, ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -25,6 +25,16 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // URL du site frontend pour voir l'événement
+  const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+
+  // Ouvrir l'événement dans un nouvel onglet
+  const handleViewEvent = (event: Event) => {
+    const eventUrl = `${FRONTEND_URL}/evenements/${event.slug}`;
+    window.open(eventUrl, '_blank', 'noopener,noreferrer');
+    setOpenMenuId(null);
+  };
 
   useEffect(() => {
     loadEvents();
@@ -453,6 +463,14 @@ export default function EventsPage() {
                                 onClick={() => setOpenMenuId(null)}
                               />
                               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20">
+                                <button
+                                  onClick={() => handleViewEvent(event)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-brand"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  Voir l'événement
+                                </button>
+
                                 <button
                                   onClick={() => handleEdit(event)}
                                   className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
