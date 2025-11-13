@@ -52,6 +52,8 @@ sys-mgnt-cse-admin/
 │   │   └── page.tsx       # Gestion des utilisateurs
 │   ├── events/
 │   │   └── page.tsx       # Gestion des événements
+│   ├── participants/
+│   │   └── page.tsx       # Gestion des participants
 │   └── layout.tsx
 ├── components/
 │   ├── Sidebar.tsx        # Menu de navigation
@@ -67,14 +69,25 @@ sys-mgnt-cse-admin/
 ### Gestion des Utilisateurs
 - ✅ Lister tous les utilisateurs
 - ✅ Voir les détails (email, nom, association, rôle)
+- ✅ **Informations d'abonnement** (type, statut, dates, prix)
+- ✅ **IDs Stripe** (customer et subscription)
 - ✅ Promouvoir/Rétrograder les rôles (user ↔ admin)
 - ✅ Voir le statut d'onboarding
 
-### Gestion des Événements (à venir)
-- Lister tous les événements
-- Créer/Modifier/Supprimer des événements
-- Changer le statut de publication
-- Annuler des événements
+### Gestion des Événements
+- ✅ Lister tous les événements
+- ✅ Créer/Modifier/Supprimer des événements
+- ✅ Changer le statut de publication
+- ✅ Annuler des événements
+- ✅ **Voir les participants** (titulaires + invités)
+- ✅ **Statistiques détaillées** (réservations, revenus, places)
+
+### Gestion des Invités
+- ✅ **Liste globale** de tous les invités
+- ✅ **Filtres** par statut (pending/validated/refused)
+- ✅ **Filtres** par événement
+- ✅ **Pagination** (limit/offset)
+- ✅ Voir la réservation et l'événement associés
 
 ## 🎨 Design System
 
@@ -101,13 +114,20 @@ npm run lint     # Linter le code
 
 ## 🔗 API Endpoints Utilisés
 
-- `GET /api/mgnt-sys-cse/users` - Liste des utilisateurs
+### Utilisateurs
+- `GET /api/mgnt-sys-cse/users` - Liste des utilisateurs (avec infos d'abonnement)
 - `GET /api/mgnt-sys-cse/users/:id` - Détails d'un utilisateur
 - `PATCH /api/mgnt-sys-cse/users/:id/role` - Changer le rôle
+
+### Événements
 - `GET /api/mgnt-sys-cse/events` - Liste des événements
 - `POST /api/mgnt-sys-cse/events` - Créer un événement
 - `PUT /api/mgnt-sys-cse/events/:id` - Modifier un événement
 - `DELETE /api/mgnt-sys-cse/events/:id` - Supprimer un événement
+- `GET /api/mgnt-sys-cse/events/:id/participants` - Participants d'un événement
+
+### Invités
+- `GET /api/mgnt-sys-cse/guests` - Liste globale des invités (avec filtres et pagination)
 
 ## 🛠️ Développement
 

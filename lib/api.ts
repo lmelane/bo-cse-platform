@@ -29,8 +29,170 @@ export interface User {
   association: string | null;
   role: 'user' | 'admin';
   onboardingCompleted: boolean;
+  
+  // Informations d'abonnement
+  subscriptionType: 'event_based' | 'unlimited' | null;
+  subscriptionStatus: 'ACTIVE' | 'INACTIVE' | 'EXPIRED' | null;
+  subscriptionStartDate: string | null;
+  subscriptionEndDate: string | null;
+  subscriptionPriceCents: number | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Guest {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: 'pending' | 'validated' | 'refused';
+  createdAt: string;
+  
+  // Info sur la réservation
+  booking: {
+    id: string;
+    isPaid: boolean;
+    totalPriceCents: number;
+    holder: {
+      email: string;
+      firstName: string;
+      lastName: string;
+    };
+  };
+  
+  // Info sur l'événement
+  event: {
+    id: string;
+    title: string;
+    startsAt: string;
+  };
+}
+
+export interface GuestsResponse {
+  stats: {
+    total: number;
+    validated: number;
+    pending: number;
+    refused: number;
+  };
+  guests: Guest[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
+export interface Participant {
+  bookingId: string;
+  createdAt: string;
+  isPaid: boolean;
+  totalPlaces: number;
+  totalPriceCents: number;
+  status: string;
+  
+  // Titulaire de la réservation
+  holder: {
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    association: string | null;
+  };
+  
+  // Liste des invités
+  guests: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    status: 'pending' | 'validated' | 'refused';
+    createdAt: string;
+  }[];
+}
+
+export interface ParticipantsResponse {
+  success: boolean;
+  event: {
+    id: string;
+    title: string;
+    startsAt: string | null;
+  };
+  stats: {
+    totalBookings: number;
+    totalPlaces: number;
+    totalRevenue: number;
+    paidBookings: number;
+    unpaidBookings: number;
+    totalGuests: number;
+    guestsValidated: number;
+    guestsPending: number;
+    guestsRefused: number;
+  };
+  data: Participant[];
+}
+
+export interface GlobalParticipant {
+  bookingId: string;
+  createdAt: string;
+  isPaid: boolean;
+  totalPlaces: number;
+  totalPriceCents: number;
+  status: string;
+  
+  // Titulaire de la réservation
+  holder: {
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    association: string | null;
+  };
+  
+  // Événement associé
+  event: {
+    id: string;
+    title: string;
+    startsAt: string | null;
+    city: string | null;
+    venueName: string | null;
+  };
+  
+  // Liste des invités
+  guests: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    status: 'pending' | 'validated' | 'refused';
+    createdAt: string;
+  }[];
+}
+
+export interface GlobalParticipantsResponse {
+  success: boolean;
+  stats: {
+    totalBookings: number;
+    totalPlaces: number;
+    totalRevenue: number;
+    paidBookings: number;
+    unpaidBookings: number;
+    totalGuests: number;
+    guestsValidated: number;
+    guestsPending: number;
+    guestsRefused: number;
+  };
+  data: GlobalParticipant[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
 }
 
 export interface Event {
@@ -67,6 +229,11 @@ export interface Event {
   currency: string | null;
   ticketStatus: string | null;
   externalBookingUrl: string | null;
+  
+  // Gestion des places
+  maxParticipants: number | null;
+  limitedThreshold: number | null;
+  timezone: string | null;
   
   // Médias
   coverImageUrl: string | null;
@@ -139,6 +306,11 @@ const eventToApiFormat = (data: Partial<Event>) => ({
   ticket_status: data.ticketStatus,
   external_booking_url: data.externalBookingUrl,
   
+  // Gestion des places
+  max_participants: data.maxParticipants,
+  limited_threshold: data.limitedThreshold,
+  timezone: data.timezone || 'Europe/Paris',
+  
   // Médias
   cover_image_url: data.coverImageUrl,
   
@@ -189,6 +361,53 @@ export const eventsApi = {
   
   updatePublication: async (id: string, publicationState: 'online' | 'offline' | 'draft') => {
     const response = await api.patch<{ success: boolean; data: Event }>(`/api/mgnt-sys-cse/events/${id}/publication`, { publication_state: publicationState });
+    return response.data;
+  },
+  
+  getParticipants: async (id: string) => {
+    const response = await api.get<ParticipantsResponse>(`/api/mgnt-sys-cse/events/${id}/participants`);
+    return response.data;
+  },
+};
+
+// API Endpoints - Participants (Global)
+export const participantsApi = {
+  getAll: async (params?: {
+    eventId?: string;
+    status?: 'validated' | 'pending' | 'cancelled';
+    isPaid?: boolean;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.eventId) queryParams.append('eventId', params.eventId);
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.isPaid !== undefined) queryParams.append('isPaid', params.isPaid.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    
+    const url = `/api/mgnt-sys-cse/participants${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await api.get<GlobalParticipantsResponse>(url);
+    return response.data;
+  },
+};
+
+// API Endpoints - Guests
+export const guestsApi = {
+  getAll: async (params?: {
+    status?: 'pending' | 'validated' | 'refused';
+    eventId?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.eventId) queryParams.append('eventId', params.eventId);
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    
+    const url = `/api/mgnt-sys-cse/guests${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const response = await api.get<GuestsResponse>(url);
     return response.data;
   },
 };

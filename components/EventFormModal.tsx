@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Event } from '@/lib/api';
-import { X, Loader2, Calendar, MapPin, Tag, Image as ImageIcon } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
+import AddressAutocomplete from './AddressAutocomplete';
 
 const RichTextEditor = dynamic(() => import('./RichTextEditor'), { ssr: false });
 
@@ -47,6 +48,11 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
     ticketStatus: 'available',
     externalBookingUrl: '',
     
+    // Gestion des places
+    maxParticipants: null,
+    limitedThreshold: null,
+    timezone: 'Europe/Paris',
+    
     // Médias
     coverImageUrl: '',
     
@@ -57,6 +63,23 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
     status: 'scheduled',
     publicationStatus: 'draft',
   });
+
+  // Fonction pour convertir ISO date vers format datetime-local
+  const formatDateForInput = (isoDate: string | null): string => {
+    if (!isoDate) return '';
+    try {
+      // Convertir "2025-11-15T18:30:00.000Z" vers "2025-11-15T18:30"
+      const date = new Date(isoDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+      return '';
+    }
+  };
 
   useEffect(() => {
     if (event) {
@@ -72,8 +95,8 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         organizerName: event.organizerName ?? '',
         
         // Dates et horaires
-        startsAt: event.startsAt ?? '',
-        endsAt: event.endsAt ?? '',
+        startsAt: formatDateForInput(event.startsAt),
+        endsAt: formatDateForInput(event.endsAt),
         
         // Localisation
         venueName: event.venueName ?? '',
@@ -91,6 +114,11 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         currency: event.currency ?? 'EUR',
         ticketStatus: event.ticketStatus ?? 'available',
         externalBookingUrl: event.externalBookingUrl ?? '',
+        
+        // Gestion des places
+        maxParticipants: event.maxParticipants ?? null,
+        limitedThreshold: event.limitedThreshold ?? null,
+        timezone: event.timezone ?? 'Europe/Paris',
         
         // Médias
         coverImageUrl: event.coverImageUrl ?? '',
@@ -126,6 +154,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         currency: 'EUR',
         ticketStatus: 'available',
         externalBookingUrl: '',
+        maxParticipants: null,
+        limitedThreshold: null,
+        timezone: 'Europe/Paris',
         coverImageUrl: '',
         descriptionHtml: '',
         status: 'scheduled',
@@ -167,7 +198,15 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    
+    // Convertir les dates datetime-local vers ISO pour l'API
+    const dataToSubmit = {
+      ...formData,
+      startsAt: formData.startsAt ? new Date(formData.startsAt).toISOString() : null,
+      endsAt: formData.endsAt ? new Date(formData.endsAt).toISOString() : null,
+    };
+    
+    await onSubmit(dataToSubmit);
   };
 
   // Générer le slug depuis le titre
@@ -205,8 +244,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
           <div className="p-6 space-y-6">
             {/* Informations principales */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900 flex items-center gap-2">
-                <Tag className="w-4 h-4" />
+              <h3 className="font-semibold text-neutral-900">
                 Informations principales
               </h3>
               
@@ -267,36 +305,68 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Catégorie
+                    Catégorie *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="categoryTag"
                     value={formData.categoryTag ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="Sport, Culture, Loisirs..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Statut de l&apos;événement
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
+                    required
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                   >
-                    <option value="scheduled">Planifié</option>
-                    <option value="ongoing">En cours</option>
-                    <option value="completed">Terminé</option>
-                    <option value="cancelled">Annulé</option>
+                    <option value="">-- Sélectionnez une catégorie --</option>
+                    <option value="afterworks">Afterworks</option>
+                    <option value="masterclass">Masterclass</option>
+                    <option value="partage-entrepreneurs">Partage d&apos;Entrepreneurs</option>
+                    <option value="workshop">Workshop</option>
+                    <option value="conference">Conférence</option>
+                    <option value="evenements-annuels">Événements Annuels</option>
+                    <option value="evenements-co-organises">Événements Co-organisés</option>
                   </select>
                 </div>
 
-                <div>
+                {/* Afficher ces champs SEULEMENT en mode modification */}
+                {event && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Annuler l&apos;événement ?
+                      </label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      >
+                        <option value="scheduled">Actif (plannifié)</option>
+                        <option value="cancelled">❌ Annulé</option>
+                      </select>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        Les statuts En cours et Terminé sont gérés automatiquement
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Fermer les réservations ?
+                      </label>
+                      <select
+                        name="ticketStatus"
+                        value={formData.ticketStatus ?? 'available'}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      >
+                        <option value="available">Ouvertes (gestion automatique)</option>
+                        <option value="closed">🔒 Fermées manuellement</option>
+                      </select>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        Forcer la fermeture bloque les nouvelles réservations même si des places sont disponibles
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                <div className={event ? 'md:col-span-2' : 'md:col-span-2'}>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Statut de publication
                   </label>
@@ -314,10 +384,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
               </div>
             </div>
 
-            {/* Dates */}
+            {/* Dates et horaires */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900 flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
+              <h3 className="font-semibold text-neutral-900">
                 Dates et horaires
               </h3>
               
@@ -353,8 +422,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
             {/* Lieu */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900 flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
+              <h3 className="font-semibold text-neutral-900">
                 Localisation
               </h3>
               
@@ -375,6 +443,31 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Rechercher une adresse
+                  </label>
+                  <AddressAutocomplete
+                    defaultValue={formData.fullAddress ?? ''}
+                    onAddressSelect={(addressData) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        addressLine1: addressData.addressLine1,
+                        postalCode: addressData.postalCode,
+                        city: addressData.city,
+                        region: addressData.region,
+                        country: addressData.country,
+                        fullAddress: addressData.fullAddress,
+                        latitude: addressData.latitude,
+                        longitude: addressData.longitude,
+                      }));
+                    }}
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Les champs ci-dessous seront remplis automatiquement
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Adresse
                   </label>
                   <input
@@ -382,8 +475,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="addressLine1"
                     value={formData.addressLine1 ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="5 Parvis Alan Turing"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                    placeholder="Auto-rempli"
+                    readOnly
                   />
                 </div>
 
@@ -396,8 +490,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="postalCode"
                     value={formData.postalCode ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="75013"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                    placeholder="Auto-rempli"
+                    readOnly
                   />
                 </div>
 
@@ -410,8 +505,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="city"
                     value={formData.city ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="Paris"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                    placeholder="Auto-rempli"
+                    readOnly
                   />
                 </div>
 
@@ -424,8 +520,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="region"
                     value={formData.region ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="Île-de-France"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                    placeholder="Auto-rempli"
+                    readOnly
                   />
                 </div>
 
@@ -438,14 +535,15 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="country"
                     value={formData.country ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="France"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                    placeholder="Auto-rempli"
+                    readOnly
                   />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Adresse complète (format texte)
+                    Adresse complète
                   </label>
                   <input
                     type="text"
@@ -535,23 +633,6 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Statut des billets
-                  </label>
-                  <select
-                    name="ticketStatus"
-                    value={formData.ticketStatus ?? 'available'}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    <option value="available">Disponible</option>
-                    <option value="limited">Places limitées</option>
-                    <option value="sold_out">Complet</option>
-                    <option value="unknown">Inconnu</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     URL de réservation externe
                   </label>
                   <input
@@ -562,6 +643,77 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     placeholder="https://billetterie.example.com"
                   />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Laissez vide si la réservation se fait sur votre plateforme
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Gestion des places */}
+            <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h3 className="font-semibold text-neutral-900">Gestion des places et quotas</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Nombre maximum de participants
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Laissez vide pour illimité"
+                    value={formData.maxParticipants ?? ''}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      maxParticipants: e.target.value ? parseInt(e.target.value) : null 
+                    }))}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Laissez vide pour un événement sans limite de places
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Seuil Places limitées
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="5 par défaut"
+                    value={formData.limitedThreshold ?? ''}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      limitedThreshold: e.target.value ? parseInt(e.target.value) : null 
+                    }))}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Affiche Places limitées quand il reste moins de X places
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Timezone
+                  </label>
+                  <select
+                    name="timezone"
+                    value={formData.timezone ?? 'Europe/Paris'}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  >
+                    <option value="Europe/Paris">Europe/Paris (UTC+1)</option>
+                    <option value="Europe/London">Europe/London (UTC+0)</option>
+                    <option value="America/New_York">America/New_York (UTC-5)</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles (UTC-8)</option>
+                    <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+                  </select>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Timezone pour les calculs de dates
+                  </p>
                 </div>
               </div>
             </div>
@@ -569,20 +721,18 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             {/* Description */}
             <div className="space-y-4">
               <h3 className="font-semibold text-neutral-900">Description de l&apos;événement</h3>
-              
               <div>
                 <RichTextEditor
                   value={formData.descriptionHtml ?? ''}
                   onChange={(html) => setFormData(prev => ({ ...prev, descriptionHtml: html }))}
-                  placeholder="Décrivez l'événement en détail..."
+                  placeholder="Décrivez l&apos;événement en détail..."
                 />
               </div>
             </div>
 
             {/* Image */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4" />
+              <h3 className="font-semibold text-neutral-900">
                 Médias
               </h3>
               

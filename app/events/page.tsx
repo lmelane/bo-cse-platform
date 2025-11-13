@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import { eventsApi, Event } from '@/lib/api';
+import { eventsApi, participantsApi, Event, GlobalParticipantsResponse } from '@/lib/api';
 import EventFormModal from '@/components/EventFormModal';
 import { 
   Calendar, Search, Loader2, AlertCircle, Plus, Edit, Trash2, 
-  Globe, EyeOff, FileText, MoreVertical 
+  Globe, EyeOff, FileText, MoreVertical, Users, UserCheck, Euro, 
+  CheckCircle, Clock, XCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -14,9 +15,12 @@ import { toast } from 'sonner';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [participants, setParticipants] = useState<GlobalParticipantsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterEventId, setFilterEventId] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +28,14 @@ export default function EventsPage() {
 
   useEffect(() => {
     loadEvents();
+    loadParticipants();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    loadParticipants();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterEventId]);
 
   const loadEvents = async () => {
     try {
@@ -38,6 +49,19 @@ export default function EventsPage() {
       toast.error('Erreur lors du chargement des événements');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadParticipants = async () => {
+    try {
+      setLoadingStats(true);
+      const params = filterEventId !== 'all' ? { eventId: filterEventId } : {};
+      const response = await participantsApi.getAll(params);
+      setParticipants(response);
+    } catch (err) {
+      console.error('Erreur lors du chargement des participants:', err);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -180,19 +204,113 @@ export default function EventsPage() {
           </button>
         </div>
 
-        {/* Barre de recherche */}
+        {/* Recherche et filtres */}
         <div className="bg-white rounded-xl border border-neutral-200 p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Rechercher par titre, slug ou ville..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-            />
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Barre de recherche */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher par titre, slug ou ville..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-11 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Filtre par événement */}
+            <div className="w-full md:w-80">
+              <select
+                value={filterEventId}
+                onChange={(e) => setFilterEventId(e.target.value)}
+                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+              >
+                <option value="all">Tous les événements</option>
+                {events.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {event.title}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
+
+        {/* Statistiques des participants */}
+        {!loading && !loadingStats && participants && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Nombre de participants (réservations) */}
+            <div className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-neutral-600">Réservations</p>
+                <Users className="w-5 h-5 text-brand" />
+              </div>
+              <p className="text-3xl font-bold text-neutral-900 mb-1">
+                {participants.stats.totalBookings}
+              </p>
+              <p className="text-xs text-neutral-500">
+                {participants.stats.totalPlaces} places au total
+              </p>
+            </div>
+
+            {/* Nombre d'invités */}
+            <div className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-neutral-600">Invités</p>
+                <UserCheck className="w-5 h-5 text-purple-600" />
+              </div>
+              <p className="text-3xl font-bold text-neutral-900 mb-1">
+                {participants.stats.totalGuests}
+              </p>
+              <div className="flex gap-3 mt-2 text-xs">
+                <span className="text-green-600 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  {participants.stats.guestsValidated}
+                </span>
+                <span className="text-yellow-600 flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {participants.stats.guestsPending}
+                </span>
+                <span className="text-red-600 flex items-center gap-1">
+                  <XCircle className="w-3 h-3" />
+                  {participants.stats.guestsRefused}
+                </span>
+              </div>
+            </div>
+
+            {/* Revenu total */}
+            <div className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-neutral-600">Revenu Total</p>
+                <Euro className="w-5 h-5 text-green-600" />
+              </div>
+              <p className="text-3xl font-bold text-neutral-900 mb-1">
+                {(participants.stats.totalRevenue / 100).toFixed(2)} €
+              </p>
+              <p className="text-xs text-neutral-500">
+                {participants.stats.paidBookings} payées / {participants.stats.unpaidBookings} impayées
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Loading des stats */}
+        {loadingStats && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-xl border border-neutral-200 p-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-neutral-200 rounded w-1/2 mb-3"></div>
+                  <div className="h-8 bg-neutral-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-neutral-200 rounded w-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Contenu */}
         {loading ? (

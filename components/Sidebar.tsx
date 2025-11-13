@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, Calendar, LayoutDashboard, LogOut, User as UserIcon } from 'lucide-react';
+import { Users, Calendar, LayoutDashboard, LogOut, User as UserIcon, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 const menuItems = [
   {
     name: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
@@ -21,6 +21,11 @@ const menuItems = [
     name: 'Événements',
     href: '/events',
     icon: Calendar,
+  },
+  {
+    name: 'Participants',
+    href: '/participants',
+    icon: UserCheck,
   },
 ];
 
@@ -47,7 +52,7 @@ export default function Sidebar() {
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
 
             return (
               <li key={item.href}>
