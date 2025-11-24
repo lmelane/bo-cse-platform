@@ -12,17 +12,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <ProtectedRoute>
       <div className="flex min-h-screen bg-neutral-50">
-        <Sidebar 
-          isMobileMenuOpen={isMobileMenuOpen} 
-          onCloseMobileMenu={() => setIsMobileMenuOpen(false)} 
+        <Sidebar
+          isMobileMenuOpen={isMobileMenuOpen}
+          onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
         />
-        
+
         {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-neutral-200 px-3 py-2.5 flex items-center justify-between shadow-sm">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-60 bg-white border-b border-neutral-200 px-3 py-2.5 flex items-center justify-between shadow-sm">
           <div>
             <h1 className="text-base font-bold text-brand">Admin CSE</h1>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {/* Icône Scanner QR - Touch optimized */}
             <Link
@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <Camera className="w-6 h-6" />
             </Link>
-            
+
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2.5 hover:bg-neutral-100 rounded-xl transition-colors active:scale-95"
