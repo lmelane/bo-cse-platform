@@ -23,15 +23,21 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
     subtitle: '',
     slug: '',
     categoryTag: '',
-    
+
+    // Type d'événement
+    eventType: 'PHYSICAL',
+    webinarUrl: '',
+
     // Intervenants
     presenterName: '',
     organizerName: '',
-    
+    organizerUrl: '',
+
     // Dates et horaires
     startsAt: '',
     endsAt: '',
-    
+    timezone: 'Europe/Paris',
+
     // Localisation
     venueName: '',
     addressLine1: '',
@@ -42,23 +48,21 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
     fullAddress: '',
     latitude: null,
     longitude: null,
-    
+
     // Tarification
     minPriceCents: 0,
-    ticketStatus: 'available',
     externalBookingUrl: '',
-    
+
     // Gestion des places
     maxParticipants: null,
     limitedThreshold: null,
-    timezone: 'Europe/Paris',
-    
+
     // Médias
     coverImageUrl: '',
-    
+
     // Contenu
     descriptionHtml: '',
-    
+
     // Statut
     status: 'scheduled',
     publicationStatus: 'draft',
@@ -89,15 +93,21 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         subtitle: event.subtitle ?? '',
         slug: event.slug ?? '',
         categoryTag: event.categoryTag ?? '',
-        
+
+        // Type d'événement
+        eventType: event.eventType ?? 'PHYSICAL',
+        webinarUrl: event.webinarUrl ?? '',
+
         // Intervenants
         presenterName: event.presenterName ?? '',
         organizerName: event.organizerName ?? '',
-        
+        organizerUrl: event.organizerUrl ?? '',
+
         // Dates et horaires
         startsAt: formatDateForInput(event.startsAt),
         endsAt: formatDateForInput(event.endsAt),
-        
+        timezone: event.timezone ?? 'Europe/Paris',
+
         // Localisation
         venueName: event.venueName ?? '',
         addressLine1: event.addressLine1 ?? '',
@@ -108,24 +118,23 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         fullAddress: event.fullAddress ?? '',
         latitude: event.latitude,
         longitude: event.longitude,
-        
+
         // Tarification
         minPriceCents: event.minPriceCents ?? 0,
         currency: event.currency ?? 'EUR',
         ticketStatus: event.ticketStatus ?? 'available',
         externalBookingUrl: event.externalBookingUrl ?? '',
-        
+
         // Gestion des places
         maxParticipants: event.maxParticipants ?? null,
         limitedThreshold: event.limitedThreshold ?? null,
-        timezone: event.timezone ?? 'Europe/Paris',
-        
+
         // Médias
         coverImageUrl: event.coverImageUrl ?? '',
-        
+
         // Contenu
         descriptionHtml: event.descriptionHtml ?? '',
-        
+
         // Statut
         status: event.status ?? 'scheduled',
         publicationStatus: event.publicationStatus ?? 'draft',
@@ -137,10 +146,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         subtitle: '',
         slug: '',
         categoryTag: '',
+        eventType: 'PHYSICAL',
+        webinarUrl: '',
         presenterName: '',
         organizerName: '',
+        organizerUrl: '',
         startsAt: '',
         endsAt: '',
+        timezone: 'Europe/Paris',
         venueName: '',
         addressLine1: '',
         postalCode: '',
@@ -152,11 +165,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         longitude: null,
         minPriceCents: 0,
         currency: 'EUR',
-        ticketStatus: 'available',
         externalBookingUrl: '',
         maxParticipants: null,
         limitedThreshold: null,
-        timezone: 'Europe/Paris',
         coverImageUrl: '',
         descriptionHtml: '',
         status: 'scheduled',
@@ -192,20 +203,20 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
       .replace(/[^a-z0-9-]/g, '-')      // Remplacer caractères invalides par -
       .replace(/-+/g, '-')              // Remplacer multiple - par un seul
       .replace(/^-|-$/g, '');           // Supprimer - au début/fin
-    
+
     setFormData(prev => ({ ...prev, slug: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Convertir les dates datetime-local vers ISO pour l'API
     const dataToSubmit = {
       ...formData,
       startsAt: formData.startsAt ? new Date(formData.startsAt).toISOString() : null,
       endsAt: formData.endsAt ? new Date(formData.endsAt).toISOString() : null,
     };
-    
+
     await onSubmit(dataToSubmit);
   };
 
@@ -247,7 +258,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
               <h3 className="font-semibold text-neutral-900">
                 Informations principales
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -325,6 +336,42 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                   </select>
                 </div>
 
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Type d&apos;événement *
+                  </label>
+                  <select
+                    name="eventType"
+                    value={formData.eventType ?? 'PHYSICAL'}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  >
+                    <option value="PHYSICAL">🏢 Événement physique</option>
+                    <option value="WEBINAR">💻 Webinar en ligne</option>
+                  </select>
+                </div>
+
+                {formData.eventType === 'WEBINAR' && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Lien du webinar *
+                    </label>
+                    <input
+                      type="url"
+                      name="webinarUrl"
+                      value={formData.webinarUrl ?? ''}
+                      onChange={handleChange}
+                      required={formData.eventType === 'WEBINAR'}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      placeholder="https://zoom.us/j/123456789"
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">
+                      ⚠️ Obligatoire pour les webinars
+                    </p>
+                  </div>
+                )}
+
                 {/* Afficher ces champs SEULEMENT en mode modification */}
                 {event && (
                   <>
@@ -348,7 +395,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Fermer les réservations ?
+                        Statut des réservations
                       </label>
                       <select
                         name="ticketStatus"
@@ -356,11 +403,15 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       >
-                        <option value="available">Ouvertes (gestion automatique)</option>
-                        <option value="closed">🔒 Fermées manuellement</option>
+                        <option value="available">✅ Places disponibles</option>
+                        <option value="limited">⚡ Dernières places</option>
+                        <option value="sold_out">❌ Complet</option>
+                        <option value="closed">🔒 Réservations fermées</option>
+                        <option value="coming_soon">🔜 Bientôt disponible</option>
                       </select>
-                      <p className="text-xs text-neutral-500 mt-1">
-                        Forcer la fermeture bloque les nouvelles réservations même si des places sont disponibles
+                      <p className="text-xs text-amber-600 mt-1 flex items-start gap-1">
+                        <span>⚠️</span>
+                        <span>Le système recalcule automatiquement ce statut selon les places disponibles. Utilisez &quot;Fermé&quot; uniquement pour bloquer manuellement les réservations.</span>
                       </p>
                     </div>
                   </>
@@ -389,7 +440,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
               <h3 className="font-semibold text-neutral-900">
                 Dates et horaires
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -420,147 +471,149 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
               </div>
             </div>
 
-            {/* Lieu */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900">
-                Localisation
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Nom du lieu
-                  </label>
-                  <input
-                    type="text"
-                    name="venueName"
-                    value={formData.venueName ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="Station F, Salle Pleyel..."
-                  />
-                </div>
+            {/* Lieu - Masquer pour les webinars */}
+            {formData.eventType !== 'WEBINAR' && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-neutral-900">
+                  Localisation
+                </h3>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Rechercher une adresse
-                  </label>
-                  <AddressAutocomplete
-                    defaultValue={formData.fullAddress ?? ''}
-                    onAddressSelect={(addressData) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        addressLine1: addressData.addressLine1,
-                        postalCode: addressData.postalCode,
-                        city: addressData.city,
-                        region: addressData.region,
-                        country: addressData.country,
-                        fullAddress: addressData.fullAddress,
-                        latitude: addressData.latitude,
-                        longitude: addressData.longitude,
-                      }));
-                    }}
-                  />
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Les champs ci-dessous seront remplis automatiquement
-                  </p>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Nom du lieu
+                    </label>
+                    <input
+                      type="text"
+                      name="venueName"
+                      value={formData.venueName ?? ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      placeholder="Station F, Salle Pleyel..."
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Adresse
-                  </label>
-                  <input
-                    type="text"
-                    name="addressLine1"
-                    value={formData.addressLine1 ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
-                    placeholder="Auto-rempli"
-                    readOnly
-                  />
-                </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Rechercher une adresse
+                    </label>
+                    <AddressAutocomplete
+                      defaultValue={formData.fullAddress ?? ''}
+                      onAddressSelect={(addressData) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          addressLine1: addressData.addressLine1,
+                          postalCode: addressData.postalCode,
+                          city: addressData.city,
+                          region: addressData.region,
+                          country: addressData.country,
+                          fullAddress: addressData.fullAddress,
+                          latitude: addressData.latitude,
+                          longitude: addressData.longitude,
+                        }));
+                      }}
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Les champs ci-dessous seront remplis automatiquement
+                    </p>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Code postal
-                  </label>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    value={formData.postalCode ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
-                    placeholder="Auto-rempli"
-                    readOnly
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Adresse
+                    </label>
+                    <input
+                      type="text"
+                      name="addressLine1"
+                      value={formData.addressLine1 ?? ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      placeholder="Auto-rempli"
+                      readOnly
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Ville
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
-                    placeholder="Auto-rempli"
-                    readOnly
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Code postal
+                    </label>
+                    <input
+                      type="text"
+                      name="postalCode"
+                      value={formData.postalCode ?? ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      placeholder="Auto-rempli"
+                      readOnly
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Région
-                  </label>
-                  <input
-                    type="text"
-                    name="region"
-                    value={formData.region ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
-                    placeholder="Auto-rempli"
-                    readOnly
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Ville
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city ?? ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      placeholder="Auto-rempli"
+                      readOnly
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Pays
-                  </label>
-                  <input
-                    type="text"
-                    name="country"
-                    value={formData.country ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
-                    placeholder="Auto-rempli"
-                    readOnly
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Région
+                    </label>
+                    <input
+                      type="text"
+                      name="region"
+                      value={formData.region ?? ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      placeholder="Auto-rempli"
+                      readOnly
+                    />
+                  </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Adresse complète
-                  </label>
-                  <input
-                    type="text"
-                    name="fullAddress"
-                    value={formData.fullAddress ?? ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    placeholder="5 Parvis Alan Turing, 75013 Paris"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Pays
+                    </label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={formData.country ?? ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      placeholder="Auto-rempli"
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Adresse complète
+                    </label>
+                    <input
+                      type="text"
+                      name="fullAddress"
+                      value={formData.fullAddress ?? ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      placeholder="5 Parvis Alan Turing, 75013 Paris"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Organisateurs */}
             <div className="space-y-4">
               <h3 className="font-semibold text-neutral-900">Organisateurs</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -590,13 +643,27 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                   />
                 </div>
 
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Site web de l&apos;organisateur
+                  </label>
+                  <input
+                    type="url"
+                    name="organizerUrl"
+                    value={formData.organizerUrl ?? ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    placeholder="https://example.com"
+                  />
+                </div>
+
               </div>
             </div>
 
             {/* Tarification */}
             <div className="space-y-4">
               <h3 className="font-semibold text-neutral-900">Tarification</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -653,7 +720,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             {/* Gestion des places */}
             <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <h3 className="font-semibold text-neutral-900">Gestion des places et quotas</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -664,9 +731,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     min="0"
                     placeholder="Laissez vide pour illimité"
                     value={formData.maxParticipants ?? ''}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      maxParticipants: e.target.value ? parseInt(e.target.value) : null 
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      maxParticipants: e.target.value ? parseInt(e.target.value) : null
                     }))}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                   />
@@ -684,9 +751,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     min="1"
                     placeholder="5 par défaut"
                     value={formData.limitedThreshold ?? ''}
-                    onChange={(e) => setFormData(prev => ({ 
-                      ...prev, 
-                      limitedThreshold: e.target.value ? parseInt(e.target.value) : null 
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      limitedThreshold: e.target.value ? parseInt(e.target.value) : null
                     }))}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                   />
@@ -735,7 +802,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
               <h3 className="font-semibold text-neutral-900">
                 Médias
               </h3>
-              
+
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   URL de l&apos;image de couverture

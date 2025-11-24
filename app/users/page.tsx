@@ -195,20 +195,21 @@ export default function UsersPage() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-neutral-900">Utilisateurs</h1>
-            <p className="text-neutral-600 mt-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-neutral-900">Utilisateurs</h1>
+            <p className="text-sm md:text-base text-neutral-600 mt-1 md:mt-2">
               {!loading && `${filteredUsers.length} utilisateur${filteredUsers.length > 1 ? 's' : ''} affiché${filteredUsers.length > 1 ? 's' : ''} sur ${users.length}`}
             </p>
           </div>
           {!loading && users.length > 0 && (
             <button
               onClick={handleExportUsers}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium whitespace-nowrap"
             >
               <Download className="w-4 h-4" />
-              Exporter les utilisateurs
+              <span className="hidden sm:inline">Exporter les utilisateurs</span>
+              <span className="sm:hidden">Exporter</span>
             </button>
           )}
         </div>
@@ -269,7 +270,7 @@ export default function UsersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-neutral-600 mb-1">
-                    Chiffre d'affaires total
+                    Chiffre d&apos;affaires total
                   </p>
                   <p className="text-3xl font-bold text-neutral-900">
                     {(subscriptionStats.totalRevenue / 100).toFixed(2)} €
@@ -324,7 +325,7 @@ export default function UsersPage() {
         {!loading && !error && filteredUsers.length > 0 && (
           <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[900px]">
                 <thead>
                   <tr className="bg-neutral-50 border-b border-neutral-200">
                     <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">

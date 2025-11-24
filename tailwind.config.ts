@@ -42,6 +42,7 @@ const config: Config = {
       spacing: {
         'header': '80px',
         'header-sm': '64px',
+        'logo': '180px',
       },
       maxWidth: {
         'container': '1280px',

@@ -540,9 +540,18 @@ interface Event {
   infoPratiquesJson: object | null;    // Infos pratiques (JSON)
   policyJson: object | null;           // Politique (JSON)
   
+  // 🆕 Type d'événement
+  eventType: "PHYSICAL" | "WEBINAR";   // Type d'événement (défaut: PHYSICAL)
+  webinarUrl: string | null;           // URL du webinar (obligatoire si WEBINAR)
+  
   // Statut
   status: "scheduled" | "ongoing" | "completed" | "cancelled";
+  publicationStatus: "draft" | "online" | "offline";
   source: string | null;               // Source des données
+  
+  // Capacité & Quotas
+  maxParticipants: number | null;      // null = illimité
+  limitedThreshold: number | null;     // Seuil pour "places limitées"
   
   // Timestamps
   createdAt: string;                   // ISO 8601 datetime
@@ -630,12 +639,17 @@ Crée un nouvel événement.
 }
 ```
 
-**Request (complet):**
+**Request (complet - événement PHYSICAL):**
 ```json
 {
   "title": "Afterwork Innovation",
   "subtitle": "Networking et échanges",
   "slug": "afterwork-innovation-dec-2025",
+  
+  // 🆕 TYPE D'ÉVÉNEMENT
+  "event_type": "PHYSICAL",
+  "webinar_url": null,
+  
   "category_tag": "afterworks",
   "availability_badge": "Places limitées",
   "presenter_name": "Jean Dupont",
@@ -664,7 +678,41 @@ Crée un nouvel événement.
   "info_pratiques_json": null,
   "policy_json": null,
   "status": "scheduled",
-  "source": null
+  "publication_status": "online",
+  "source": null,
+  "max_participants": 100,
+  "limited_threshold": 10
+}
+```
+
+**Request (complet - événement WEBINAR):**
+```json
+{
+  "title": "Webinar : Introduction à Next.js 15",
+  "subtitle": "Découvrez les nouveautés en direct",
+  "slug": "webinar-nextjs-15",
+  
+  // 🆕 TYPE D'ÉVÉNEMENT
+  "event_type": "WEBINAR",
+  "webinar_url": "https://zoom.us/j/123456789",
+  
+  "category_tag": "tech",
+  "presenter_name": "Sophie Martin",
+  "organizer_name": "CSE Tech",
+  "starts_at": "2024-12-10T14:00:00.000Z",
+  "ends_at": "2024-12-10T16:00:00.000Z",
+  "timezone": "Europe/Paris",
+  "venue_name": null,
+  "city": null,
+  "min_price_cents": 0,
+  "currency": "EUR",
+  "ticket_status": "available",
+  "cover_image_url": "https://images.unsplash.com/photo-xyz",
+  "description_html": "<p>Rejoignez-nous pour un webinar exclusif...</p>",
+  "status": "scheduled",
+  "publication_status": "online",
+  "max_participants": 100,
+  "limited_threshold": 10
 }
 ```
 
@@ -674,6 +722,31 @@ Crée un nouvel événement.
   "success": true,
   "message": "Événement créé avec succès",
   "data": { /* Event object créé */ }
+}
+```
+
+**⚠️ Règles de validation pour `event_type` :**
+
+| Type | `webinar_url` | `venue_name` | Validation |
+|------|---------------|--------------|------------|
+| `WEBINAR` | ✅ **OBLIGATOIRE** | ❌ Optionnel | Erreur 400 si `webinar_url` manquant |
+| `PHYSICAL` | ❌ Optionnel | ⚠️ Recommandé | Warning si `venue_name` manquant |
+
+**Erreurs possibles :**
+
+```json
+// Type invalide
+{
+  "error": "Validation error",
+  "message": "event_type doit être PHYSICAL ou WEBINAR"
+}
+```
+
+```json
+// Webinar sans URL
+{
+  "error": "Validation error",
+  "message": "Le lien du webinar est obligatoire pour les événements en ligne"
 }
 ```
 
@@ -758,6 +831,11 @@ Le back-office doit transformer les données avant envoi :
 | `descriptionHtml` | `description_html` |
 | `infoPratiquesJson` | `info_pratiques_json` |
 | `policyJson` | `policy_json` |
+| **`eventType`** 🆕 | **`event_type`** |
+| **`webinarUrl`** 🆕 | **`webinar_url`** |
+| `publicationStatus` | `publication_status` |
+| `maxParticipants` | `max_participants` |
+| `limitedThreshold` | `limited_threshold` |
 
 **Note**: Les réponses de l'API retournent en camelCase !
 

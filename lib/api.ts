@@ -154,44 +154,40 @@ export interface ParticipantsResponse {
 }
 
 export interface GlobalParticipant {
-  bookingId: string;
-  createdAt: string;
+  // Type et identifiant
+  type: 'booking' | 'guest';
+  id: string;
+  
+  // Informations du participant
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  association: string | null;
+  referredBy: string | null; // Parrain pour les guests
+  
+  // Status
+  status: string;
   isPaid: boolean;
+  
+  // Réservation
   totalPlaces: number;
   totalPriceCents: number;
-  status: string;
   
-  // Titulaire de la réservation
-  holder: {
-    userId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    association: string | null;
-  };
+  // Événement
+  eventId: string;
+  eventTitle: string;
+  eventDate: string | null;
   
-  // Événement associé
-  event: {
-    id: string;
-    title: string;
-    startsAt: string | null;
-    city: string | null;
-    venueName: string | null;
-  };
+  // Timestamps
+  createdAt: string;
   
-  // Liste des invités
-  guests: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    status: 'pending' | 'validated' | 'refused';
-    createdAt: string;
-  }[];
+  // Présence (QR Code)
+  presenceStatus: string;
+  scannedAt: string | null;
 }
 
 export interface GlobalParticipantsResponse {
-  success: boolean;
+  events?: Event[]; // Liste des événements (pour le filtre)
   stats: {
     totalBookings: number;
     totalPlaces: number;
@@ -203,8 +199,8 @@ export interface GlobalParticipantsResponse {
     guestsPending: number;
     guestsRefused: number;
   };
-  data: GlobalParticipant[];
-  pagination: {
+  participants: GlobalParticipant[]; // Renommé de "data" à "participants"
+  pagination?: { // Optionnel maintenant
     total: number;
     limit: number;
     offset: number;
@@ -222,13 +218,19 @@ export interface Event {
   subtitle: string | null;
   categoryTag: string | null;
   
+  // Type d'événement (NOUVEAU - optionnel pour rétrocompatibilité)
+  eventType?: 'PHYSICAL' | 'WEBINAR';
+  webinarUrl: string | null;
+  
   // Intervenants
   presenterName: string | null;
   organizerName: string | null;
+  organizerUrl: string | null;
   
   // Dates et horaires
   startsAt: string | null;
   endsAt: string | null;
+  timezone: string | null;
   
   // Localisation
   venueName: string | null;
@@ -250,7 +252,6 @@ export interface Event {
   // Gestion des places
   maxParticipants: number | null;
   limitedThreshold: number | null;
-  timezone: string | null;
   
   // Médias
   coverImageUrl: string | null;
@@ -298,13 +299,19 @@ const eventToApiFormat = (data: Partial<Event>) => ({
   subtitle: data.subtitle,
   category_tag: data.categoryTag,
   
+  // Type d'événement (NOUVEAU)
+  event_type: data.eventType || 'PHYSICAL',
+  webinar_url: data.webinarUrl,
+  
   // Intervenants
   presenter_name: data.presenterName,
   organizer_name: data.organizerName,
+  organizer_url: data.organizerUrl,
   
   // Dates et horaires
   starts_at: data.startsAt,
   ends_at: data.endsAt,
+  timezone: data.timezone || 'Europe/Paris',
   
   // Localisation
   venue_name: data.venueName,
@@ -326,7 +333,6 @@ const eventToApiFormat = (data: Partial<Event>) => ({
   // Gestion des places
   max_participants: data.maxParticipants,
   limited_threshold: data.limitedThreshold,
-  timezone: data.timezone || 'Europe/Paris',
   
   // Médias
   cover_image_url: data.coverImageUrl,

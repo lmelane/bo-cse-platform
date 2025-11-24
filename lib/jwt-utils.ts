@@ -5,7 +5,7 @@
 interface JWTPayload {
   exp?: number;
   iat?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -67,7 +67,7 @@ export function getTokenTimeToExpiry(token: string): number | null {
 /**
  * Extrait une claim spécifique du JWT
  */
-export function getTokenClaim<T = any>(token: string, claim: string): T | null {
+export function getTokenClaim<T = unknown>(token: string, claim: string): T | null {
   const payload = decodeJWT(token);
-  return payload?.[claim] ?? null;
+  return (payload?.[claim] as T) ?? null;
 }
