@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import { Camera, TrendingUp, CheckCircle, XCircle, Clock, Users, Calendar } from 'lucide-react';
+import { Camera, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { tokenStorage } from '@/lib/auth';
 
@@ -111,7 +111,7 @@ export default function ScannerStatsPage() {
                   <p className="text-sm text-neutral-600">Total Scans</p>
                 </div>
                 <p className="text-3xl font-bold text-neutral-900">{stats.totalScans}</p>
-                <p className="text-xs text-neutral-500 mt-2">Aujourd'hui: {stats.todayScans}</p>
+                <p className="text-xs text-neutral-500 mt-2">Aujourd&apos;hui: {stats.todayScans}</p>
               </div>
 
               {/* Scans Réussis */}
@@ -161,14 +161,14 @@ export default function ScannerStatsPage() {
               <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
                 {stats.scansPerHour.map((item) => (
                   <div key={item.hour} className="text-center">
-                    <div 
+                    <div
                       className="bg-brand-50 rounded-lg mb-1 flex items-end justify-center"
                       style={{ height: '80px' }}
                     >
-                      <div 
+                      <div
                         className="bg-brand rounded-t w-full transition-all"
-                        style={{ 
-                          height: `${item.count > 0 ? Math.max((item.count / Math.max(...stats.scansPerHour.map(s => s.count))) * 100, 10) : 0}%` 
+                        style={{
+                          height: `${item.count > 0 ? Math.max((item.count / Math.max(...stats.scansPerHour.map(s => s.count))) * 100, 10) : 0}%`
                         }}
                       />
                     </div>
@@ -210,11 +210,10 @@ export default function ScannerStatsPage() {
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">Derniers scans</h2>
               <div className="space-y-2">
                 {stats.recentScans.map((scan) => (
-                  <div 
-                    key={scan.id} 
-                    className={`flex items-center gap-3 p-3 rounded-lg border ${
-                      scan.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                    }`}
+                  <div
+                    key={scan.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${scan.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                      }`}
                   >
                     {scan.success ? (
                       <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />

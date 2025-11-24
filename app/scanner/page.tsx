@@ -21,7 +21,7 @@ export default function ScannerPage() {
               </Link>
               <div className="flex items-center gap-2">
                 <Camera className="w-5 h-5 text-brand" />
-                <h1 className="text-base font-semibold text-neutral-800">Contrôle d'accès</h1>
+                <h1 className="text-base font-semibold text-neutral-800">Contrôle d&apos;accès</h1>
               </div>
             </div>
             <Link

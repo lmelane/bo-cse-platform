@@ -54,20 +54,21 @@ export function QRScanner() {
 
       setIsScanning(true);
       setScanResult(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error starting scanner:', error);
 
       // Message d'erreur personnalisé selon le type d'erreur
       let errorMessage = 'Erreur lors du démarrage de la caméra';
 
-      if (error?.name === 'NotAllowedError' || error?.message?.includes('Permission denied')) {
+      const err = error as { name?: string; message?: string };
+      if (err?.name === 'NotAllowedError' || err?.message?.includes('Permission denied')) {
         errorMessage = '❌ Accès caméra refusé\n\n' +
           '1. Cliquez sur l\'icône 🔒 dans la barre d\'adresse\n' +
           '2. Autorisez l\'accès à la caméra\n' +
           '3. Rechargez la page';
-      } else if (error?.name === 'NotFoundError') {
+      } else if (err?.name === 'NotFoundError') {
         errorMessage = '❌ Aucune caméra détectée sur cet appareil';
-      } else if (error?.name === 'NotReadableError') {
+      } else if (err?.name === 'NotReadableError') {
         errorMessage = '❌ Caméra déjà utilisée par une autre application';
       }
 
@@ -173,7 +174,7 @@ export function QRScanner() {
   };
 
   const playSuccessSound = () => {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -191,7 +192,7 @@ export function QRScanner() {
   };
 
   const playErrorSound = () => {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 

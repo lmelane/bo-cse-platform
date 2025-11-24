@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, User, Mail, Calendar, MapPin, DollarSign, CheckCircle, Clock, UserPlus, QrCode } from 'lucide-react';
+import { X, User, Mail, Calendar, DollarSign, CheckCircle, Clock, UserPlus, QrCode } from 'lucide-react';
 import { GlobalParticipant } from '@/lib/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -30,7 +30,7 @@ export default function ParticipantDetailsModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div 
+      <div
         className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -49,11 +49,10 @@ export default function ParticipantDetailsModal({
         <div className="p-6 space-y-6">
           {/* Type de participant */}
           <div className="flex items-center gap-3">
-            <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${
-              participant.type === 'booking' 
-                ? 'bg-brand/10 text-brand' 
+            <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${participant.type === 'booking'
+                ? 'bg-brand/10 text-brand'
                 : 'bg-purple-100 text-purple-700'
-            }`}>
+              }`}>
               {participant.type === 'booking' ? (
                 <>
                   <User className="w-4 h-4 mr-2" />
@@ -66,11 +65,10 @@ export default function ParticipantDetailsModal({
                 </>
               )}
             </span>
-            <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${
-              participant.presenceStatus === 'PRESENT'
+            <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${participant.presenceStatus === 'PRESENT'
                 ? 'bg-green-100 text-green-700'
                 : 'bg-gray-100 text-gray-600'
-            }`}>
+              }`}>
               <QrCode className="w-4 h-4 mr-2" />
               {participant.presenceStatus === 'PRESENT' ? 'Présent' : 'Absent'}
             </span>
@@ -140,11 +138,10 @@ export default function ParticipantDetailsModal({
             <div className="bg-neutral-50 rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600">Statut paiement</span>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  participant.isPaid
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${participant.isPaid
                     ? 'bg-green-100 text-green-800'
                     : 'bg-yellow-100 text-yellow-800'
-                }`}>
+                  }`}>
                   {participant.isPaid ? 'Payé' : 'Gratuit'}
                 </span>
               </div>
@@ -172,11 +169,10 @@ export default function ParticipantDetailsModal({
             <div className="bg-neutral-50 rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600">Statut</span>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  participant.presenceStatus === 'PRESENT'
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${participant.presenceStatus === 'PRESENT'
                     ? 'bg-green-100 text-green-700'
                     : 'bg-gray-100 text-gray-600'
-                }`}>
+                  }`}>
                   {participant.presenceStatus === 'PRESENT' ? (
                     <>
                       <CheckCircle className="w-4 h-4 mr-1" />

@@ -23,7 +23,7 @@ export default function AddressAutocomplete({ onAddressSelect, defaultValue }: A
 
   const initAutocomplete = useCallback(() => {
     if (!inputRef.current) return;
-    
+
     const windowWithGoogle = window as Window & { google?: { maps?: { places?: { Autocomplete: new (input: HTMLInputElement, options: Record<string, unknown>) => unknown } } } };
     if (!windowWithGoogle.google?.maps) return;
 
@@ -36,9 +36,9 @@ export default function AddressAutocomplete({ onAddressSelect, defaultValue }: A
 
     (autocomplete as { addListener: (event: string, callback: () => void) => void }).addListener('place_changed', () => {
       const place = (autocomplete as { getPlace: () => Record<string, unknown> | null }).getPlace();
-      
+
       if (!place || typeof place !== 'object') return;
-      
+
       const placeObj = place as {
         address_components?: Array<{ types: string[]; long_name: string; short_name: string }>;
         formatted_address?: string;
@@ -97,7 +97,7 @@ export default function AddressAutocomplete({ onAddressSelect, defaultValue }: A
 
   useEffect(() => {
     const windowWithGoogle = window as Window & { google?: { maps?: unknown } };
-    
+
     // Vérifier si Google Maps est déjà chargé
     if (typeof window !== 'undefined' && windowWithGoogle.google?.maps) {
       setIsLoaded(true);
@@ -122,7 +122,7 @@ export default function AddressAutocomplete({ onAddressSelect, defaultValue }: A
 
     // Charger le script Google Maps pour la première fois
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    
+
     if (!apiKey) {
       console.error('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not defined');
       return;
@@ -141,7 +141,7 @@ export default function AddressAutocomplete({ onAddressSelect, defaultValue }: A
     document.head.appendChild(script);
 
     // Ne pas retirer le script au cleanup pour éviter de le recharger
-  }, []);
+  }, [initAutocomplete]);
 
   return (
     <div className="relative">
