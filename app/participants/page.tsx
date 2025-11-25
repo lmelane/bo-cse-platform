@@ -79,6 +79,7 @@ export default function ParticipantsPage() {
           eventId: booking.event.id,
           eventTitle: booking.event.title,
           eventDate: booking.event.startsAt,
+          eventType: booking.event.eventType,
           createdAt: booking.createdAt,
           presenceStatus: 'AWAITING', // TODO: récupérer depuis l'API si disponible
           scannedAt: null,
@@ -101,6 +102,7 @@ export default function ParticipantsPage() {
             eventId: booking.event.id,
             eventTitle: booking.event.title,
             eventDate: booking.event.startsAt,
+            eventType: booking.event.eventType,
             createdAt: guest.createdAt,
             presenceStatus: 'AWAITING', // TODO: récupérer depuis l'API si disponible
             scannedAt: null,
@@ -157,6 +159,7 @@ export default function ParticipantsPage() {
       'Parrain/Référent',
       'Statut',
       'Événement',
+      'Type d\'événement',
       'Date Événement',
       'Payé',
       'Prix (€)',
@@ -177,6 +180,7 @@ export default function ParticipantsPage() {
       p.referredBy || '',
       p.status,
       p.eventTitle,
+      p.eventType === 'WEBINAR' ? 'Webinar' : p.eventType === 'PHYSICAL' ? 'Événement physique' : 'Non renseigné',
       p.eventDate ? formatDate(p.eventDate) : '',
       p.isPaid ? 'Oui' : 'Non',
       (p.totalPriceCents / 100).toFixed(2),
@@ -402,6 +406,7 @@ export default function ParticipantsPage() {
                       <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Nom</th>
                       <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Email</th>
                       <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Événement</th>
+                      <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Type</th>
                       <th className="text-center px-6 py-4 text-sm font-semibold text-neutral-700">Présence</th>
                       <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Date</th>
                       <th className="text-center px-6 py-4 text-sm font-semibold text-neutral-700">Actions</th>
@@ -424,6 +429,21 @@ export default function ParticipantsPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-neutral-600">{participant.email}</td>
                         <td className="px-6 py-4 text-sm text-neutral-900">{participant.eventTitle}</td>
+                        <td className="px-6 py-4">
+                          {participant.eventType === 'WEBINAR' ? (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-700">
+                              Webinar
+                            </span>
+                          ) : participant.eventType === 'PHYSICAL' ? (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-700">
+                              Physique
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-neutral-100 text-neutral-600">
+                              Non renseigné
+                            </span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-center">
                           {(() => {
                             const now = new Date();

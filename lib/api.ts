@@ -185,6 +185,7 @@ export interface ParticipantBooking {
     startsAt: string;
     city: string | null;
     venueName: string | null;
+    eventType: 'PHYSICAL' | 'WEBINAR' | null;
   };
 
   guests: Array<{
@@ -235,6 +236,7 @@ export interface GlobalParticipant {
   eventId: string;
   eventTitle: string;
   eventDate: string | null;
+  eventType: 'PHYSICAL' | 'WEBINAR' | null;
   createdAt: string;
   presenceStatus: string;
   scannedAt: string | null;
