@@ -177,7 +177,7 @@ export default function QRScanner() {
       }
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const endpoint = '/api/mgnt-sys-cse/scanner/validate';
+      const endpoint = '/api/admin/scanner/validate';
 
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
