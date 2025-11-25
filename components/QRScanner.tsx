@@ -185,7 +185,7 @@ export default function QRScanner() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ qrCode: qrCodeData }),
+        body: JSON.stringify({ qrToken: qrCodeData }),
       });
 
       const data = await response.json();
