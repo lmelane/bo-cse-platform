@@ -29,14 +29,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo / Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand rounded-xl mb-4">
-            <Lock className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-neutral-900">Admin CSE</h1>
-        </div>
-
         {/* Carte de connexion */}
         <div className="bg-white rounded-xl border border-neutral-200 p-8 shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
