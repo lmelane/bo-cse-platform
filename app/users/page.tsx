@@ -328,7 +328,7 @@ export default function UsersPage() {
         {!loading && !error && filteredUsers.length > 0 && (
           <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
+              <table className="w-full">
                 <thead>
                   <tr className="bg-neutral-50 border-b border-neutral-200">
                     <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
