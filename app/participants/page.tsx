@@ -124,7 +124,13 @@ export default function ParticipantsPage() {
       p.isPaid ? 'Oui' : 'Non',
       (p.totalPriceCents / 100).toFixed(2),
       p.totalPlaces.toString(),
-      p.presenceStatus === 'PRESENT' ? 'Présent' : 'Absent',
+      (() => {
+        if (p.presenceStatus === 'PRESENT') return 'Présent';
+        const now = new Date();
+        const eventStart = p.eventDate ? new Date(p.eventDate) : null;
+        const isEventStarted = eventStart ? now >= eventStart : true;
+        return isEventStarted ? 'Absent' : 'En attente';
+      })(),
       p.scannedAt ? formatDate(p.scannedAt) : '',
       formatDate(p.createdAt),
     ]);
@@ -362,10 +368,35 @@ export default function ParticipantsPage() {
                         <td className="px-6 py-4 text-sm text-neutral-600">{participant.email}</td>
                         <td className="px-6 py-4 text-sm text-neutral-900">{participant.eventTitle}</td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${participant.presenceStatus === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                            }`}>
-                            {participant.presenceStatus === 'PRESENT' ? 'Présent' : 'Absent'}
-                          </span>
+                          {(() => {
+                            const now = new Date();
+                            const eventStart = participant.eventDate ? new Date(participant.eventDate) : null;
+                            const isEventStarted = eventStart ? now >= eventStart : true;
+
+                            if (participant.presenceStatus === 'PRESENT') {
+                              return (
+                                <span className="inline-flex px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-700">
+                                  Présent
+                                </span>
+                              );
+                            }
+
+                            // Si l'événement n'a pas encore commencé
+                            if (!isEventStarted) {
+                              return (
+                                <span className="inline-flex px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-700">
+                                  En attente
+                                </span>
+                              );
+                            }
+
+                            // Si l'événement a commencé ou est terminé et pas scanné
+                            return (
+                              <span className="inline-flex px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-600">
+                                Absent
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-6 py-4 text-sm text-neutral-600">{formatDate(participant.createdAt)}</td>
                         <td className="px-6 py-4 text-center">
