@@ -114,16 +114,13 @@ export default function QRScanner() {
   };
 
   const stopScanning = () => {
-    if (codeReaderRef.current) {
-      // Arrêter le scanner et libérer la caméra
-      try {
-        codeReaderRef.current.stopAsyncDecode();
-        codeReaderRef.current.stopContinuousDecode();
-      } catch (e) {
-        // Ignorer les erreurs si déjà arrêté
-      }
-      setIsScanning(false);
+    // Arrêter le flux vidéo
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
     }
+    setIsScanning(false);
   };
 
   const validateQRCode = async (qrCodeData: string) => {
