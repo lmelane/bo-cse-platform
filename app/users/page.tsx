@@ -15,13 +15,13 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  
+
   // Filtres et recherche
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300); // Debounce de 300ms
   const [filterType, setFilterType] = useState<'all' | 'event_based' | 'unlimited'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED'>('all');
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 50;
@@ -50,7 +50,7 @@ export default function UsersPage() {
   const handleRoleChange = async (userId: string, currentRole: 'user' | 'admin') => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
     const confirmMessage = `Êtes-vous sûr de vouloir changer le rôle en "${newRole}" ?`;
-    
+
     if (!confirm(confirmMessage)) return;
 
     try {
@@ -129,19 +129,19 @@ export default function UsersPage() {
     return users.filter((user) => {
       // Recherche par nom, prénom, email (debouncée)
       const searchLower = debouncedSearchTerm.toLowerCase();
-      const matchesSearch = 
-        !debouncedSearchTerm || 
+      const matchesSearch =
+        !debouncedSearchTerm ||
         user.email.toLowerCase().includes(searchLower) ||
         user.firstName?.toLowerCase().includes(searchLower) ||
         user.lastName?.toLowerCase().includes(searchLower) ||
         `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower);
-      
+
       // Filtre par type d'abonnement
       const matchesType = filterType === 'all' || user.subscriptionType === filterType;
-      
+
       // Filtre par statut d'abonnement
       const matchesStatus = filterStatus === 'all' || user.subscriptionStatus === filterStatus;
-      
+
       return matchesSearch && matchesType && matchesStatus;
     });
   }, [users, debouncedSearchTerm, filterType, filterStatus]);
@@ -150,7 +150,7 @@ export default function UsersPage() {
   const { paginatedUsers, totalPages } = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    
+
     return {
       paginatedUsers: filteredUsers.slice(startIndex, endIndex),
       totalPages: Math.ceil(filteredUsers.length / ITEMS_PER_PAGE),
@@ -384,11 +384,10 @@ export default function UsersPage() {
                       {/* Rôle */}
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                            user.role === 'admin'
-                              ? 'bg-brand/10 text-brand'
-                              : 'bg-neutral-100 text-neutral-700'
-                          }`}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
+                            ? 'bg-brand/10 text-brand'
+                            : 'bg-neutral-100 text-neutral-700'
+                            }`}
                         >
                           {user.role === 'admin' ? (
                             <Shield className="w-3 h-3" />
@@ -410,9 +409,8 @@ export default function UsersPage() {
                       <td className="px-6 py-4">
                         {user.subscriptionStatus ? (
                           <span
-                            className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                              formatSubscriptionStatus(user.subscriptionStatus)?.className
-                            }`}
+                            className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${formatSubscriptionStatus(user.subscriptionStatus)?.className
+                              }`}
                           >
                             {formatSubscriptionStatus(user.subscriptionStatus)?.label}
                           </span>
@@ -424,11 +422,10 @@ export default function UsersPage() {
                       {/* Onboarding */}
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                            user.onboardingCompleted
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-yellow-100 text-yellow-700'
-                          }`}
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${user.onboardingCompleted
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                            }`}
                         >
                           {user.onboardingCompleted ? 'Complété' : 'En cours'}
                         </span>
@@ -459,12 +456,12 @@ export default function UsersPage() {
                             <>
                               {/* Overlay pour fermer le menu */}
                               <div
-                                className="fixed inset-0 z-10"
+                                className="fixed inset-0 z-[90]"
                                 onClick={() => setOpenMenuId(null)}
                               />
-                              
+
                               {/* Menu */}
-                              <div className="absolute right-0 top-10 z-20 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1">
+                              <div className="absolute right-0 top-10 z-[100] w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1">
                                 <button
                                   onClick={() => {
                                     setOpenMenuId(null);
@@ -494,7 +491,7 @@ export default function UsersPage() {
                 </tbody>
               </table>
             </div>
-            
+
             {/* Pagination */}
             <Pagination
               currentPage={currentPage}

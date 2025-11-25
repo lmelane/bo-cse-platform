@@ -5,9 +5,9 @@ import AdminLayout from '@/components/AdminLayout';
 import { eventsApi, participantsApi, Event, GlobalParticipantsResponse } from '@/lib/api';
 import EventFormModal from '@/components/EventFormModal';
 import { tokenStorage } from '@/lib/auth';
-import { 
-  Calendar, Search, Loader2, AlertCircle, Plus, Edit, Trash2, 
-  Globe, EyeOff, FileText, MoreVertical, Users, UserCheck, Euro, 
+import {
+  Calendar, Search, Loader2, AlertCircle, Plus, Edit, Trash2,
+  Globe, EyeOff, FileText, MoreVertical, Users, UserCheck, Euro,
   CheckCircle, Clock, XCircle, ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -54,13 +54,13 @@ export default function EventsPage() {
   const loadDashboard = async () => {
     // Éviter les appels simultanés
     if (isRefreshing) return;
-    
+
     try {
       setIsRefreshing(true);
       setLoading(true);
       setLoadingStats(true);
       setError('');
-      
+
       const token = tokenStorage.get();
       if (!token) {
         setError('Token manquant');
@@ -79,17 +79,17 @@ export default function EventsPage() {
       }
 
       const data = await response.json();
-      
+
       setEvents(data.events);
       setParticipants(data.participants);
-      
+
       // Convertir l'objet attendance en Map
       const attendanceMap = new Map<string, EventAttendance>();
       Object.entries(data.attendance).forEach(([eventId, stats]) => {
         attendanceMap.set(eventId, stats as EventAttendance);
       });
       setEventAttendance(attendanceMap);
-      
+
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Erreur lors du chargement des événements');
@@ -116,7 +116,7 @@ export default function EventsPage() {
   const handleSubmit = async (data: Partial<Event>) => {
     try {
       setIsSubmitting(true);
-      
+
       if (selectedEvent) {
         // Mise à jour
         await eventsApi.update(selectedEvent.id, data);
@@ -126,7 +126,7 @@ export default function EventsPage() {
         await eventsApi.create(data);
         toast.success('Événement créé avec succès !');
       }
-      
+
       setIsModalOpen(false);
       await loadDashboard();
     } catch (err) {
@@ -139,7 +139,7 @@ export default function EventsPage() {
 
   const handleDelete = async (event: Event) => {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${event.title}" ?`)) return;
-    
+
     try {
       await eventsApi.delete(event.id);
       toast.success('Événement supprimé');
@@ -164,7 +164,7 @@ export default function EventsPage() {
     setOpenMenuId(null);
   };
 
-  const filteredEvents = events.filter(event => 
+  const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.city?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -177,7 +177,7 @@ export default function EventsPage() {
       completed: 'bg-neutral-100 text-neutral-700',
       cancelled: 'bg-red-100 text-red-700',
     };
-    
+
     const labels = {
       scheduled: 'Planifié',
       ongoing: 'En cours',
@@ -198,7 +198,7 @@ export default function EventsPage() {
       draft: 'bg-yellow-100 text-yellow-700',
       offline: 'bg-neutral-100 text-neutral-700',
     };
-    
+
     const labels = {
       online: 'En ligne',
       draft: 'Brouillon',
@@ -395,8 +395,8 @@ export default function EventsPage() {
                     <div className="relative">
                       {event.coverImageUrl && (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img 
-                          src={event.coverImageUrl} 
+                        <img
+                          src={event.coverImageUrl}
                           alt={event.title}
                           className="w-full h-32 object-cover"
                         />
@@ -443,7 +443,7 @@ export default function EventsPage() {
                               <p className="text-green-600 font-bold text-lg">
                                 {attendance.presentCount}
                                 <span className="text-xs text-neutral-500 ml-1">
-                                  ({attendance.totalParticipants > 0 
+                                  ({attendance.totalParticipants > 0
                                     ? `${((attendance.presentCount / attendance.totalParticipants) * 100).toFixed(0)}%`
                                     : '0%'})
                                 </span>
@@ -476,14 +476,14 @@ export default function EventsPage() {
                           >
                             <MoreVertical className="w-5 h-5 text-neutral-600" />
                           </button>
-                          
+
                           {openMenuId === event.id && (
                             <>
-                              <div 
-                                className="fixed inset-0 z-10"
+                              <div
+                                className="fixed inset-0 z-[90]"
                                 onClick={() => setOpenMenuId(null)}
                               />
-                              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20">
+                              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-[100]">
                                 <button
                                   onClick={() => handlePublicationChange(event, 'online')}
                                   className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-green-700"
@@ -528,228 +528,228 @@ export default function EventsPage() {
             <div className="hidden lg:block bg-white rounded-xl border border-neutral-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-max">
-                <thead className="bg-neutral-50 border-b border-neutral-200">
-                  <tr>
-                    <th className="px-3 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight">
-                      Événement
-                    </th>
-                    <th className="px-2 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
-                      Date
-                    </th>
-                    <th className="px-2 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
-                      Lieu
-                    </th>
-                    <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
-                      Total
-                    </th>
-                    <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
-                      Présents
-                    </th>
-                    <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
-                      Statut
-                    </th>
-                    <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
-                      Publié
-                    </th>
-                    <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
-                      Catégorie
-                    </th>
-                    <th className="px-2 py-2.5 text-right text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap w-20">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-200">
-                  {filteredEvents.map((event) => (
-                    <tr key={event.id} className="hover:bg-neutral-50 transition-colors">
-                      <td className="px-3 py-3">
-                        <div className="flex items-start gap-2">
-                          {event.coverImageUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img 
-                              src={event.coverImageUrl} 
-                              alt={event.title}
-                              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-                            />
-                          )}
-                          <div className="min-w-0 max-w-[250px]">
-                            <div className="font-medium text-neutral-900 truncate text-sm">
-                              {event.title}
-                            </div>
-                            {event.subtitle && (
-                              <div className="text-xs text-neutral-600 truncate">
-                                {event.subtitle}
-                              </div>
-                            )}
-                            <div className="text-[10px] text-neutral-500 font-mono mt-0.5 truncate">
-                              {event.slug}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap">
-                        <div className="text-sm text-neutral-900">
-                          {formatDate(event.startsAt)}
-                        </div>
-                        {event.endsAt && (
-                          <div className="text-xs text-neutral-500">
-                            → {formatDate(event.endsAt)}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-2 py-3">
-                        <div className="text-sm text-neutral-900 truncate max-w-[100px]">
-                          {event.venueName || '-'}
-                        </div>
-                        {event.city && (
-                          <div className="text-xs text-neutral-500 truncate max-w-[100px]">
-                            {event.city}
-                          </div>
-                        )}
-                      </td>
-                      {/* Colonne Total Participants */}
-                      <td className="px-2 py-3">
-                        {(() => {
-                          const attendance = eventAttendance.get(event.id);
-                          if (!attendance) {
-                            return (
-                              <div className="text-center">
-                                <span className="text-sm text-neutral-400">-</span>
-                              </div>
-                            );
-                          }
-                          return (
-                            <div className="text-center">
-                              <div className="text-base font-bold text-neutral-900">
-                                {attendance.totalParticipants}
-                              </div>
-                              <div className="text-[10px] text-neutral-500">
-                                total
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      
-                      {/* Colonne Présents */}
-                      <td className="px-2 py-3">
-                        {(() => {
-                          const attendance = eventAttendance.get(event.id);
-                          if (!attendance) {
-                            return (
-                              <div className="text-center">
-                                <span className="text-sm text-neutral-400">-</span>
-                              </div>
-                            );
-                          }
-                          return (
-                            <div className="text-center">
-                              <div className="text-base font-bold text-green-600">
-                                {attendance.presentCount}
-                              </div>
-                              <div className="text-[10px] text-neutral-500">
-                                {attendance.totalParticipants > 0 
-                                  ? `${((attendance.presentCount / attendance.totalParticipants) * 100).toFixed(0)}%`
-                                  : '0%'
-                                }
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        {getStatusBadge(event.status)}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        {getPublicationBadge(event.publicationStatus)}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        {event.categoryTag ? (
-                          <span className="px-2 py-1 rounded-md text-xs font-medium bg-brand/10 text-brand whitespace-nowrap">
-                            {event.categoryTag}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-neutral-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap relative">
-                        <div className="flex justify-end">
-                          <button
-                            onClick={() => setOpenMenuId(openMenuId === event.id ? null : event.id)}
-                            className="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors"
-                          >
-                            <MoreVertical className="w-4 h-4 text-neutral-600" />
-                          </button>
-                        </div>
-                        
-                        {openMenuId === event.id && (
-                          <>
-                            <div 
-                              className="fixed inset-0 z-10"
-                              onClick={() => setOpenMenuId(null)}
-                            />
-                            <div className="absolute right-2 mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20">
-                              <button
-                                onClick={() => handleViewEvent(event)}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-brand"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                                Voir l&apos;événement
-                              </button>
-
-                              <button
-                                onClick={() => handleEdit(event)}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
-                              >
-                                <Edit className="w-4 h-4" />
-                                Modifier
-                              </button>
-                              
-                              <div className="border-t border-neutral-200 my-1" />
-                              
-                              <button
-                                onClick={() => handlePublicationChange(event, 'online')}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-green-700"
-                              >
-                                <Globe className="w-4 h-4" />
-                                Mettre en ligne
-                              </button>
-                              
-                              <button
-                                onClick={() => handlePublicationChange(event, 'offline')}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-orange-700"
-                              >
-                                <EyeOff className="w-4 h-4" />
-                                Mettre hors ligne
-                              </button>
-                              
-                              <button
-                                onClick={() => handlePublicationChange(event, 'draft')}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
-                              >
-                                <FileText className="w-4 h-4" />
-                                Mettre en brouillon
-                              </button>
-                              
-                              <div className="border-t border-neutral-200 my-1" />
-                              
-                              <button
-                                onClick={() => handleDelete(event)}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Supprimer
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </td>
+                  <thead className="bg-neutral-50 border-b border-neutral-200">
+                    <tr>
+                      <th className="px-3 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight">
+                        Événement
+                      </th>
+                      <th className="px-2 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                        Date
+                      </th>
+                      <th className="px-2 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                        Lieu
+                      </th>
+                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                        Total
+                      </th>
+                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                        Présents
+                      </th>
+                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                        Statut
+                      </th>
+                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                        Publié
+                      </th>
+                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                        Catégorie
+                      </th>
+                      <th className="px-2 py-2.5 text-right text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap w-20">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200">
+                    {filteredEvents.map((event) => (
+                      <tr key={event.id} className="hover:bg-neutral-50 transition-colors">
+                        <td className="px-3 py-3">
+                          <div className="flex items-start gap-2">
+                            {event.coverImageUrl && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={event.coverImageUrl}
+                                alt={event.title}
+                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                              />
+                            )}
+                            <div className="min-w-0 max-w-[250px]">
+                              <div className="font-medium text-neutral-900 truncate text-sm">
+                                {event.title}
+                              </div>
+                              {event.subtitle && (
+                                <div className="text-xs text-neutral-600 truncate">
+                                  {event.subtitle}
+                                </div>
+                              )}
+                              <div className="text-[10px] text-neutral-500 font-mono mt-0.5 truncate">
+                                {event.slug}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap">
+                          <div className="text-sm text-neutral-900">
+                            {formatDate(event.startsAt)}
+                          </div>
+                          {event.endsAt && (
+                            <div className="text-xs text-neutral-500">
+                              → {formatDate(event.endsAt)}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-3">
+                          <div className="text-sm text-neutral-900 truncate max-w-[100px]">
+                            {event.venueName || '-'}
+                          </div>
+                          {event.city && (
+                            <div className="text-xs text-neutral-500 truncate max-w-[100px]">
+                              {event.city}
+                            </div>
+                          )}
+                        </td>
+                        {/* Colonne Total Participants */}
+                        <td className="px-2 py-3">
+                          {(() => {
+                            const attendance = eventAttendance.get(event.id);
+                            if (!attendance) {
+                              return (
+                                <div className="text-center">
+                                  <span className="text-sm text-neutral-400">-</span>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="text-center">
+                                <div className="text-base font-bold text-neutral-900">
+                                  {attendance.totalParticipants}
+                                </div>
+                                <div className="text-[10px] text-neutral-500">
+                                  total
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </td>
+
+                        {/* Colonne Présents */}
+                        <td className="px-2 py-3">
+                          {(() => {
+                            const attendance = eventAttendance.get(event.id);
+                            if (!attendance) {
+                              return (
+                                <div className="text-center">
+                                  <span className="text-sm text-neutral-400">-</span>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="text-center">
+                                <div className="text-base font-bold text-green-600">
+                                  {attendance.presentCount}
+                                </div>
+                                <div className="text-[10px] text-neutral-500">
+                                  {attendance.totalParticipants > 0
+                                    ? `${((attendance.presentCount / attendance.totalParticipants) * 100).toFixed(0)}%`
+                                    : '0%'
+                                  }
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap text-center">
+                          {getStatusBadge(event.status)}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap text-center">
+                          {getPublicationBadge(event.publicationStatus)}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap text-center">
+                          {event.categoryTag ? (
+                            <span className="px-2 py-1 rounded-md text-xs font-medium bg-brand/10 text-brand whitespace-nowrap">
+                              {event.categoryTag}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-neutral-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-3 whitespace-nowrap relative">
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === event.id ? null : event.id)}
+                              className="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors"
+                            >
+                              <MoreVertical className="w-4 h-4 text-neutral-600" />
+                            </button>
+                          </div>
+
+                          {openMenuId === event.id && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-[90]"
+                                onClick={() => setOpenMenuId(null)}
+                              />
+                              <div className="absolute right-2 mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-[100]">
+                                <button
+                                  onClick={() => handleViewEvent(event)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-brand"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  Voir l&apos;événement
+                                </button>
+
+                                <button
+                                  onClick={() => handleEdit(event)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  Modifier
+                                </button>
+
+                                <div className="border-t border-neutral-200 my-1" />
+
+                                <button
+                                  onClick={() => handlePublicationChange(event, 'online')}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-green-700"
+                                >
+                                  <Globe className="w-4 h-4" />
+                                  Mettre en ligne
+                                </button>
+
+                                <button
+                                  onClick={() => handlePublicationChange(event, 'offline')}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-orange-700"
+                                >
+                                  <EyeOff className="w-4 h-4" />
+                                  Mettre hors ligne
+                                </button>
+
+                                <button
+                                  onClick={() => handlePublicationChange(event, 'draft')}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  Mettre en brouillon
+                                </button>
+
+                                <div className="border-t border-neutral-200 my-1" />
+
+                                <button
+                                  onClick={() => handleDelete(event)}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Supprimer
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
           </>
         )}
       </div>
