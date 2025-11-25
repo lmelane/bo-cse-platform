@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import { Event, GlobalParticipantsResponse, GlobalParticipant } from '@/lib/api';
+import { Event, GlobalParticipantsResponse, GlobalParticipant, api, eventsApi, ParticipantBooking } from '@/lib/api';
 import { tokenStorage } from '@/lib/auth';
 import { Users, Loader2, Calendar, DollarSign, UserCheck, UserX, Clock, Search, Download, Eye } from 'lucide-react';
 import { format } from 'date-fns';
@@ -16,6 +16,7 @@ export default function ParticipantsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('all');
   const [participantsData, setParticipantsData] = useState<GlobalParticipantsResponse | null>(null);
+  const [flattenedParticipants, setFlattenedParticipants] = useState<GlobalParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,36 +35,92 @@ export default function ParticipantsPage() {
       setLoading(true);
       setError(null);
 
-      // UN SEUL appel API pour tout
       const token = tokenStorage.get();
       if (!token) {
         throw new Error('Token manquant');
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      // Utiliser la bonne route API
       const url = selectedEventId === 'all'
-        ? `${API_URL}/api/admin/participants/dashboard`
-        : `${API_URL}/api/admin/participants/dashboard?eventId=${selectedEventId}`;
+        ? '/api/mgnt-sys-cse/participants'
+        : `/api/mgnt-sys-cse/participants?eventId=${selectedEventId}`;
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+      const response = await api.get<GlobalParticipantsResponse>(url);
+      const apiData = response.data;
+
+      // Mettre à jour les événements si ce n'est pas déjà fait
+      if (events.length === 0 && selectedEventId === 'all') {
+        // Charger les événements pour le filtre
+        try {
+          const eventsResponse = await eventsApi.getAll();
+          setEvents(eventsResponse.data);
+        } catch (err) {
+          console.error('Error loading events:', err);
+        }
+      }
+
+      // Transformer les données : aplatir bookings + guests
+      const flattenedParticipants: GlobalParticipant[] = apiData.data.flatMap((booking: ParticipantBooking) => {
+        const participants: GlobalParticipant[] = [];
+
+        // Ajouter l'adhérent (titulaire de la réservation)
+        participants.push({
+          type: 'booking',
+          id: booking.bookingId,
+          firstName: booking.participant.firstName,
+          lastName: booking.participant.lastName,
+          email: booking.participant.email,
+          association: booking.participant.association,
+          referredBy: null,
+          status: booking.status,
+          isPaid: booking.isPaid,
+          totalPlaces: booking.totalPlaces,
+          totalPriceCents: booking.totalPriceCents,
+          eventId: booking.event.id,
+          eventTitle: booking.event.title,
+          eventDate: booking.event.startsAt,
+          createdAt: booking.createdAt,
+          presenceStatus: 'AWAITING', // TODO: récupérer depuis l'API si disponible
+          scannedAt: null,
+        });
+
+        // Ajouter les invités
+        booking.guests.forEach((guest) => {
+          participants.push({
+            type: 'guest',
+            id: guest.guestId,
+            firstName: guest.firstName,
+            lastName: guest.lastName,
+            email: guest.email,
+            association: null,
+            referredBy: `${booking.participant.firstName} ${booking.participant.lastName}`,
+            status: guest.status,
+            isPaid: booking.isPaid,
+            totalPlaces: 1,
+            totalPriceCents: 0,
+            eventId: booking.event.id,
+            eventTitle: booking.event.title,
+            eventDate: booking.event.startsAt,
+            createdAt: guest.createdAt,
+            presenceStatus: 'AWAITING', // TODO: récupérer depuis l'API si disponible
+            scannedAt: null,
+          });
+        });
+
+        return participants;
       });
 
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement des données');
-      }
-
-      const data = await response.json();
-
-      // Mettre à jour les événements (seulement au premier chargement)
-      if (events.length === 0) {
-        setEvents(data.events);
-      }
-
       // Mettre à jour les participants et stats
-      setParticipantsData(data as GlobalParticipantsResponse);
+      setParticipantsData({
+        success: apiData.success,
+        stats: apiData.stats,
+        data: apiData.data,
+        pagination: apiData.pagination,
+      });
+
+      // Stocker les participants aplatis
+      setFlattenedParticipants(flattenedParticipants);
+
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Erreur lors du chargement des données');
@@ -110,7 +167,7 @@ export default function ParticipantsPage() {
     ];
 
     // Construire les lignes pour chaque participant
-    const rows = participantsData.participants.map((p) => [
+    const rows = flattenedParticipants.map((p: GlobalParticipant) => [
       p.type === 'booking' ? 'Adhérent' : 'Invité',
       p.id,
       p.lastName || '',
@@ -143,7 +200,7 @@ export default function ParticipantsPage() {
   };
 
   // Filtrer les participants par recherche (debouncée)
-  const filteredParticipants = participantsData?.participants.filter((participant) => {
+  const filteredParticipants = flattenedParticipants.filter((participant: GlobalParticipant) => {
     if (!debouncedSearchTerm) return true;
 
     const searchLower = debouncedSearchTerm.toLowerCase();
@@ -182,7 +239,7 @@ export default function ParticipantsPage() {
               Gérer les participants aux événements
             </p>
           </div>
-          {!loading && participantsData && participantsData.participants.length > 0 && (
+          {!loading && participantsData && flattenedParticipants.length > 0 && (
             <button
               onClick={handleExportParticipants}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium whitespace-nowrap"
@@ -333,7 +390,7 @@ export default function ParticipantsPage() {
                   Liste des participants
                 </h2>
                 <p className="text-xs md:text-sm text-neutral-600 mt-1">
-                  {filteredParticipants.length} participant(s) affiché(s) sur {participantsData.participants.length}
+                  {filteredParticipants.length} participant(s) affiché(s) sur {flattenedParticipants.length}
                 </p>
               </div>
 
@@ -351,9 +408,9 @@ export default function ParticipantsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200">
-                    {filteredParticipants.sort((a, b) =>
+                    {filteredParticipants.sort((a: GlobalParticipant, b: GlobalParticipant) =>
                       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                    ).map((participant) => (
+                    ).map((participant: GlobalParticipant) => (
                       <tr key={participant.id} className="hover:bg-neutral-50">
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${participant.type === 'booking' ? 'bg-brand/10 text-brand' : 'bg-purple-100 text-purple-700'
@@ -418,7 +475,7 @@ export default function ParticipantsPage() {
         )}
 
         {/* Empty State - No Results */}
-        {participantsData && participantsData.participants.length > 0 && filteredParticipants.length === 0 && !loading && (
+        {participantsData && flattenedParticipants.length > 0 && filteredParticipants.length === 0 && !loading && (
           <div className="bg-white rounded-xl border border-neutral-200 p-12 text-center">
             <Search className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-neutral-900 mb-2">
@@ -437,7 +494,7 @@ export default function ParticipantsPage() {
         )}
 
         {/* Empty State - No Participants */}
-        {participantsData && participantsData.participants.length === 0 && !loading && (
+        {participantsData && flattenedParticipants.length === 0 && !loading && (
           <div className="bg-white rounded-xl border border-neutral-200 p-12 text-center">
             <Users className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-neutral-900 mb-2">

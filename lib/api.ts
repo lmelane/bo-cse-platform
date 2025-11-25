@@ -161,41 +161,44 @@ export interface ParticipantsResponse {
   data: Participant[];
 }
 
-export interface GlobalParticipant {
-  // Type et identifiant
-  type: 'booking' | 'guest';
-  id: string;
-
-  // Informations du participant
-  firstName: string | null;
-  lastName: string | null;
-  email: string;
-  association: string | null;
-  referredBy: string | null; // Parrain pour les guests
-
-  // Status
-  status: string;
+// Structure de la réponse de l'API /api/mgnt-sys-cse/participants
+export interface ParticipantBooking {
+  type: 'booking';
+  bookingId: string;
+  createdAt: string;
   isPaid: boolean;
-
-  // Réservation
   totalPlaces: number;
   totalPriceCents: number;
+  status: 'active' | 'cancelled';
 
-  // Événement
-  eventId: string;
-  eventTitle: string;
-  eventDate: string | null;
+  participant: {
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    association: string;
+  };
 
-  // Timestamps
-  createdAt: string;
+  event: {
+    id: string;
+    title: string;
+    startsAt: string;
+    city: string | null;
+    venueName: string | null;
+  };
 
-  // Présence (QR Code)
-  presenceStatus: string;
-  scannedAt: string | null;
+  guests: Array<{
+    guestId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    status: 'validated' | 'pending' | 'refused';
+    createdAt: string;
+  }>;
 }
 
 export interface GlobalParticipantsResponse {
-  events?: Event[]; // Liste des événements (pour le filtre)
+  success: boolean;
   stats: {
     totalBookings: number;
     totalPlaces: number;
@@ -207,13 +210,34 @@ export interface GlobalParticipantsResponse {
     guestsPending: number;
     guestsRefused: number;
   };
-  participants: GlobalParticipant[]; // Renommé de "data" à "participants"
-  pagination?: { // Optionnel maintenant
+  data: ParticipantBooking[];
+  pagination: {
     total: number;
     limit: number;
     offset: number;
     hasMore: boolean;
   };
+}
+
+// Type aplati pour l'affichage dans le tableau
+export interface GlobalParticipant {
+  type: 'booking' | 'guest';
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  association: string | null;
+  referredBy: string | null;
+  status: string;
+  isPaid: boolean;
+  totalPlaces: number;
+  totalPriceCents: number;
+  eventId: string;
+  eventTitle: string;
+  eventDate: string | null;
+  createdAt: string;
+  presenceStatus: string;
+  scannedAt: string | null;
 }
 
 export interface Event {
