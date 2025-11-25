@@ -18,6 +18,8 @@ export default function QRScanner() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [manualCode, setManualCode] = useState('');
+  const [isValidatingManual, setIsValidatingManual] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
@@ -68,8 +70,48 @@ export default function QRScanner() {
     oscillator.stop(audioContext.currentTime + 0.3);
   };
 
+  const requestCameraPermission = async (): Promise<boolean> => {
+    try {
+      // Demander explicitement la permission
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+
+      // Arrêter immédiatement le stream de test
+      stream.getTracks().forEach(track => track.stop());
+
+      return true;
+    } catch (error: unknown) {
+      const err = error as { name?: string; message?: string };
+
+      let errorMessage = 'Erreur lors de la demande d\'accès caméra';
+
+      if (err?.name === 'NotAllowedError' || err?.message?.includes('Permission denied')) {
+        errorMessage = '❌ Accès caméra refusé\n\n' +
+          '📱 Sur mobile:\n' +
+          '1. Autorisez la caméra dans les paramètres du navigateur\n' +
+          '2. Rechargez la page\n\n' +
+          '💻 Sur ordinateur:\n' +
+          '1. Cliquez sur l\'icône 🔒 dans la barre d\'adresse\n' +
+          '2. Autorisez l\'accès à la caméra\n' +
+          '3. Rechargez la page';
+      } else if (err?.name === 'NotFoundError') {
+        errorMessage = '❌ Aucune caméra détectée sur cet appareil';
+      } else if (err?.name === 'NotReadableError') {
+        errorMessage = '❌ Caméra déjà utilisée par une autre application';
+      }
+
+      setCameraError(errorMessage);
+      return false;
+    }
+  };
+
   const startScanning = async () => {
     if (!codeReaderRef.current || !videoRef.current) return;
+
+    // Demander d'abord la permission
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
 
     try {
       setCameraError(null);
@@ -190,8 +232,47 @@ export default function QRScanner() {
     }
   };
 
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualCode.trim()) return;
+
+    setIsValidatingManual(true);
+    await validateQRCode(manualCode.trim());
+    setIsValidatingManual(false);
+    setManualCode('');
+  };
+
   return (
     <div className="space-y-6">
+      {/* Saisie manuelle */}
+      <div className="bg-white rounded-lg border border-neutral-200 p-6">
+        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Saisie manuelle du code</h3>
+        <form onSubmit={handleManualSubmit} className="flex gap-3">
+          <input
+            type="text"
+            value={manualCode}
+            onChange={(e) => setManualCode(e.target.value)}
+            placeholder="Entrez le code QR manuellement"
+            className="flex-1 px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+            disabled={isValidatingManual}
+          />
+          <button
+            type="submit"
+            disabled={!manualCode.trim() || isValidatingManual}
+            className="px-6 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isValidatingManual ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Validation...
+              </>
+            ) : (
+              'Valider'
+            )}
+          </button>
+        </form>
+      </div>
+
       {/* Contrôles */}
       <div className="flex justify-center gap-4">
         {!isScanning ? (
