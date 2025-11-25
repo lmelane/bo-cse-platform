@@ -8,6 +8,7 @@ import { exportToCSV } from '@/lib/csv-utils';
 import toast from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
 import Pagination from '@/components/Pagination';
+import UserDetailsModal from '@/components/UserDetailsModal';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -15,6 +16,8 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Filtres et recherche
   const [searchTerm, setSearchTerm] = useState('');
@@ -481,6 +484,23 @@ export default function UsersPage() {
                                     </>
                                   )}
                                 </button>
+                                <button
+                                  onClick={async () => {
+                                    setOpenMenuId(null);
+                                    // Récupérer les détails complets de l'utilisateur
+                                    try {
+                                      const response = await usersApi.getById(user.id);
+                                      setSelectedUser(response.data);
+                                      setIsDetailsModalOpen(true);
+                                    } catch (err) {
+                                      toast.error('Erreur lors du chargement des détails');
+                                    }
+                                  }}
+                                  className="w-full text-left px-4 py-2 hover:bg-neutral-50 transition-colors flex items-center gap-3"
+                                >
+                                  <UserIcon className="w-4 h-4 text-neutral-600" />
+                                  <span className="text-sm text-neutral-700">Voir les détails</span>
+                                </button>
                               </div>
                             </>
                           )}
@@ -539,6 +559,13 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de détails utilisateur */}
+      <UserDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        user={selectedUser}
+      />
     </AdminLayout>
   );
 }
