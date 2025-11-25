@@ -80,8 +80,8 @@ export default function ParticipantsPage() {
           eventTitle: booking.event.title,
           eventDate: booking.event.startsAt,
           createdAt: booking.createdAt,
-          presenceStatus: 'AWAITING', // TODO: récupérer depuis l'API si disponible
-          scannedAt: null,
+          presenceStatus: booking.presenceStatus || 'AWAITING',
+          scannedAt: booking.scannedAt,
         });
 
         // Ajouter les invités
@@ -102,8 +102,8 @@ export default function ParticipantsPage() {
             eventTitle: booking.event.title,
             eventDate: booking.event.startsAt,
             createdAt: guest.createdAt,
-            presenceStatus: 'AWAITING', // TODO: récupérer depuis l'API si disponible
-            scannedAt: null,
+            presenceStatus: guest.presenceStatus || 'AWAITING',
+            scannedAt: guest.scannedAt,
           });
         });
 

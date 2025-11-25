@@ -171,6 +171,11 @@ export interface ParticipantBooking {
   totalPriceCents: number;
   status: 'active' | 'cancelled';
 
+  // Présence
+  presenceStatus: 'PRESENT' | 'ABSENT' | 'AWAITING';
+  scannedAt: string | null;
+  scannedBy: string | null;
+
   participant: {
     userId: string;
     email: string;
@@ -194,6 +199,9 @@ export interface ParticipantBooking {
     lastName: string;
     status: 'validated' | 'pending' | 'refused';
     createdAt: string;
+    presenceStatus: 'PRESENT' | 'ABSENT' | 'AWAITING';
+    scannedAt: string | null;
+    scannedBy: string | null;
   }>;
 }
 
