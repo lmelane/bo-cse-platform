@@ -113,9 +113,15 @@ export default function QRScanner() {
     }
   };
 
-  const stopScanning = async () => {
+  const stopScanning = () => {
     if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
+      // Arrêter le scanner et libérer la caméra
+      try {
+        codeReaderRef.current.stopAsyncDecode();
+        codeReaderRef.current.stopContinuousDecode();
+      } catch (e) {
+        // Ignorer les erreurs si déjà arrêté
+      }
       setIsScanning(false);
     }
   };
@@ -258,8 +264,8 @@ export default function QRScanner() {
       {/* Résultat du scan */}
       {scanResult && (
         <div className={`rounded-lg p-6 border ${scanResult.success
-            ? 'bg-green-50 border-green-200'
-            : 'bg-red-50 border-red-200'
+          ? 'bg-green-50 border-green-200'
+          : 'bg-red-50 border-red-200'
           }`}>
           <div className="flex items-start gap-4">
             {scanResult.success ? (
