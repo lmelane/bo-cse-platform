@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { BrowserQRCodeReader } from '@zxing/browser';
 import { Camera, CameraOff, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { tokenStorage } from '@/lib/auth';
 
@@ -10,168 +10,27 @@ interface ScanResult {
   message: string;
   participant?: {
     name: string;
-    email: string;
     event: string;
-    type: 'booking' | 'guest';
   };
-  alreadyScanned?: boolean;
-  scannedAt?: string;
 }
 
-export function QRScanner() {
+export default function QRScanner() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [manualToken, setManualToken] = useState('');
-  const [showManual, setShowManual] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const qrReaderDivId = 'qr-reader';
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
 
   useEffect(() => {
+    // Initialiser le code reader
+    codeReaderRef.current = new BrowserQRCodeReader();
+
     return () => {
-      // Cleanup scanner on unmount
-      if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop().catch(console.error);
-      }
+      // Cleanup au démontage
+      stopScanning();
     };
   }, []);
-
-  const startScanning = async () => {
-    try {
-      if (!scannerRef.current) {
-        scannerRef.current = new Html5Qrcode(qrReaderDivId);
-      }
-
-      await scannerRef.current.start(
-        { facingMode: 'environment' }, // Caméra arrière sur mobile
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        onScanSuccess,
-        () => { } // Ignorer les erreurs de scan
-      );
-
-      setIsScanning(true);
-      setScanResult(null);
-    } catch (error: unknown) {
-      console.error('Error starting scanner:', error);
-
-      // Message d'erreur personnalisé selon le type d'erreur
-      let errorMessage = 'Erreur lors du démarrage de la caméra';
-
-      const err = error as { name?: string; message?: string };
-      if (err?.name === 'NotAllowedError' || err?.message?.includes('Permission denied')) {
-        errorMessage = '❌ Accès caméra refusé\n\n' +
-          '1. Cliquez sur l\'icône 🔒 dans la barre d\'adresse\n' +
-          '2. Autorisez l\'accès à la caméra\n' +
-          '3. Rechargez la page';
-      } else if (err?.name === 'NotFoundError') {
-        errorMessage = '❌ Aucune caméra détectée sur cet appareil';
-      } else if (err?.name === 'NotReadableError') {
-        errorMessage = '❌ Caméra déjà utilisée par une autre application';
-      }
-
-      alert(errorMessage);
-    }
-  };
-
-  const stopScanning = async () => {
-    if (scannerRef.current?.isScanning) {
-      await scannerRef.current.stop();
-      setIsScanning(false);
-    }
-  };
-
-  const onScanSuccess = async (decodedText: string) => {
-    // Stopper le scan temporairement
-    await stopScanning();
-    await validateQRCode(decodedText);
-  };
-
-  const validateQRCode = async (qrToken: string, isManual: boolean = false) => {
-    setIsProcessing(true);
-    setScanResult(null);
-
-    try {
-      // Récupérer le token admin
-      const adminToken = tokenStorage.get();
-
-      if (!adminToken) {
-        setScanResult({
-          success: false,
-          message: 'Session expirée. Veuillez vous reconnecter.',
-        });
-        return;
-      }
-
-      // Appeler l'API de app-cse
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const endpoint = isManual ? '/api/admin/scanner/validate' : '/api/admin/scanner/validateQRCode';
-      const response = await fetch(`${apiUrl}${endpoint} `, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken} `,
-        },
-        body: JSON.stringify({ qrToken }),
-      });
-
-      const data = await response.json();
-
-      if (response.status === 401 || response.status === 403) {
-        setScanResult({
-          success: false,
-          message: 'Session expirée. Veuillez vous reconnecter.',
-        });
-        // Optionnel : rediriger vers login
-        // router.push('/login');
-        return;
-      }
-
-      if (!response.ok) {
-        console.error('API Error:', data);
-        setScanResult({
-          success: false,
-          message: data.error || data.message || 'Erreur lors de la validation',
-        });
-        return;
-      }
-
-      setScanResult(data);
-
-      // Son de succès/erreur
-      if (data.success) {
-        playSuccessSound();
-      } else {
-        playErrorSound();
-      }
-
-      // Auto-restart scan après 3 secondes
-      setTimeout(() => {
-        setScanResult(null);
-        startScanning();
-      }, 3000);
-    } catch (error) {
-      console.error('Validation error:', error);
-      setScanResult({
-        success: false,
-        message: 'Erreur de connexion au serveur',
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleManualValidation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualToken.trim()) return;
-
-    // Nettoyer et normaliser le token (enlever espaces, mettre en majuscules)
-    const cleanedToken = manualToken.trim().toUpperCase();
-    await validateQRCode(cleanedToken, true);
-    setManualToken('');
-  };
 
   const playSuccessSound = () => {
     const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
@@ -209,130 +68,228 @@ export function QRScanner() {
     oscillator.stop(audioContext.currentTime + 0.3);
   };
 
+  const startScanning = async () => {
+    if (!codeReaderRef.current || !videoRef.current) return;
+
+    try {
+      setCameraError(null);
+      setScanResult(null);
+
+      // Démarrer le scanner avec la caméra arrière
+      await codeReaderRef.current.decodeFromVideoDevice(
+        undefined, // undefined = utiliser la caméra par défaut
+        videoRef.current,
+        async (result, error) => {
+          if (result) {
+            // QR code détecté !
+            await stopScanning();
+            await validateQRCode(result.getText());
+          }
+          // Ignorer les erreurs de décodage (pas encore de QR code détecté)
+        }
+      );
+
+      setIsScanning(true);
+    } catch (error: unknown) {
+      console.error('Error starting scanner:', error);
+
+      let errorMessage = 'Erreur lors du démarrage de la caméra';
+
+      const err = error as { name?: string; message?: string };
+      if (err?.name === 'NotAllowedError' || err?.message?.includes('Permission denied')) {
+        errorMessage = '❌ Accès caméra refusé\n\n' +
+          '1. Cliquez sur l\'icône 🔒 dans la barre d\'adresse\n' +
+          '2. Autorisez l\'accès à la caméra\n' +
+          '3. Rechargez la page';
+      } else if (err?.name === 'NotFoundError') {
+        errorMessage = '❌ Aucune caméra détectée sur cet appareil';
+      } else if (err?.name === 'NotReadableError') {
+        errorMessage = '❌ Caméra déjà utilisée par une autre application';
+      } else if (err?.message?.includes('HTTPS')) {
+        errorMessage = '❌ HTTPS requis pour utiliser la caméra';
+      }
+
+      setCameraError(errorMessage);
+    }
+  };
+
+  const stopScanning = async () => {
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+      setIsScanning(false);
+    }
+  };
+
+  const validateQRCode = async (qrCodeData: string) => {
+    try {
+      const token = tokenStorage.get();
+      if (!token) {
+        setScanResult({
+          success: false,
+          message: 'Session expirée. Veuillez vous reconnecter.',
+        });
+        return;
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const endpoint = '/api/mgnt-sys-cse/scanner/validate';
+
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ qrCode: qrCodeData }),
+      });
+
+      const data = await response.json();
+
+      if (response.status === 401 || response.status === 403) {
+        setScanResult({
+          success: false,
+          message: 'Session expirée. Veuillez vous reconnecter.',
+        });
+        return;
+      }
+
+      if (!response.ok) {
+        console.error('API Error:', data);
+        setScanResult({
+          success: false,
+          message: data.error || data.message || 'Erreur lors de la validation',
+        });
+        playErrorSound();
+        return;
+      }
+
+      setScanResult(data);
+
+      // Son de succès/erreur
+      if (data.success) {
+        playSuccessSound();
+      } else {
+        playErrorSound();
+      }
+
+      // Auto-restart scan après 3 secondes
+      setTimeout(() => {
+        setScanResult(null);
+        startScanning();
+      }, 3000);
+    } catch (error) {
+      console.error('Error validating QR code:', error);
+      setScanResult({
+        success: false,
+        message: 'Erreur de connexion au serveur',
+      });
+      playErrorSound();
+    }
+  };
+
   return (
-    <div className="w-full space-y-4">
-      {/* Scanner Webcam - Mobile First */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Header simplifié blanc */}
-        <div className="bg-white border-b border-neutral-200 p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Camera className="w-5 h-5 text-brand" />
-              <h2 className="text-sm font-semibold text-neutral-800">Scanner</h2>
-            </div>
-            {isScanning && (
-              <button
-                onClick={stopScanning}
-                className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg transition-colors font-medium text-sm"
-              >
-                <CameraOff className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Body du scanner */}
-        <div className="p-4">
-
-          {/* Zone de scan */}
-          <div className="relative">
-            <div
-              id={qrReaderDivId}
-              className={`w - full rounded - lg overflow - hidden ${isScanning ? 'block' : 'hidden'} `}
-              style={{ minHeight: '300px' }}
-            />
-
-            {!isScanning && !scanResult && (
-              <button
-                onClick={startScanning}
-                className="w-full flex flex-col items-center justify-center py-16 px-4 bg-gradient-to-br from-brand-50 to-brand-100 rounded-lg border-2 border-dashed border-brand-200 hover:border-brand-400 hover:bg-brand-100 transition-all active:scale-98 cursor-pointer"
-              >
-                <Camera className="w-14 h-14 text-brand mb-3" />
-                <p className="text-neutral-800 text-center font-semibold text-base">
-                  Touchez pour scanner
-                </p>
-              </button>
-            )}
-
-            {isProcessing && (
-              <div className="absolute inset-0 bg-white/95 flex items-center justify-center rounded-lg">
-                <Loader2 className="w-14 h-14 text-brand animate-spin" />
-              </div>
-            )}
-          </div>
-
-          {/* Résultat du scan */}
-          {scanResult && (
-            <div className={`mt - 4 p - 6 rounded - xl border - 2 ${scanResult.success
-                ? 'bg-green-50 border-green-400'
-                : scanResult.alreadyScanned
-                  ? 'bg-orange-50 border-orange-400'
-                  : 'bg-red-50 border-red-400'
-              } `}>
-              <div className="flex items-center gap-3">
-                {scanResult.success ? (
-                  <CheckCircle className="w-10 h-10 text-green-600 flex-shrink-0" />
-                ) : scanResult.alreadyScanned ? (
-                  <AlertCircle className="w-10 h-10 text-orange-600 flex-shrink-0" />
-                ) : (
-                  <XCircle className="w-10 h-10 text-red-600 flex-shrink-0" />
-                )}
-
-                <div className="flex-1">
-                  <p className={`font - bold text - xl mb - 1 ${scanResult.success
-                      ? 'text-green-900'
-                      : scanResult.alreadyScanned
-                        ? 'text-orange-900'
-                        : 'text-red-900'
-                    } `}>
-                    {scanResult.message}
-                  </p>
-
-                  {scanResult.participant && (
-                    <p className="text-neutral-900 font-medium text-lg mt-2">
-                      {scanResult.participant.name}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+    <div className="space-y-6">
+      {/* Contrôles */}
+      <div className="flex justify-center gap-4">
+        {!isScanning ? (
+          <button
+            onClick={startScanning}
+            className="flex items-center gap-2 px-6 py-3 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium"
+          >
+            <Camera className="w-5 h-5" />
+            Démarrer le scan
+          </button>
+        ) : (
+          <button
+            onClick={stopScanning}
+            className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+          >
+            <CameraOff className="w-5 h-5" />
+            Arrêter le scan
+          </button>
+        )}
       </div>
 
-      {/* Saisie manuelle - Collapsible */}
-      <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
-        <button
-          onClick={() => setShowManual(!showManual)}
-          className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors"
-        >
-          <span className="text-sm text-neutral-600">Saisie manuelle</span>
-          <span className="text-neutral-400 text-xs">
-            {showManual ? '▲' : '▼'}
-          </span>
-        </button>
+      {/* Erreur caméra */}
+      {cameraError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-900 mb-1">Erreur caméra</h3>
+              <p className="text-sm text-red-700 whitespace-pre-line">{cameraError}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {showManual && (
-          <div className="px-4 pb-4 border-t border-neutral-200">
-            <form onSubmit={handleManualValidation} className="flex gap-2 mt-3">
-              <input
-                type="text"
-                value={manualToken}
-                onChange={(e) => setManualToken(e.target.value)}
-                placeholder="Ex: BF1DE95F"
-                className="flex-1 px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent uppercase"
-              />
-              <button
-                type="submit"
-                disabled={!manualToken.trim() || isProcessing}
-                className="px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                OK
-              </button>
-            </form>
+      {/* Zone de scan - Vidéo */}
+      <div className="relative w-full max-w-md mx-auto rounded-lg overflow-hidden bg-black">
+        <video
+          ref={videoRef}
+          className="w-full h-auto"
+          style={{ maxHeight: '400px', objectFit: 'cover' }}
+        />
+
+        {!isScanning && !cameraError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/50">
+            <p className="text-white text-center px-4">
+              Cliquez sur &quot;Démarrer le scan&quot; pour activer la caméra
+            </p>
+          </div>
+        )}
+
+        {isScanning && (
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Overlay avec carré de scan */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-64 h-64 border-4 border-brand rounded-lg relative">
+                {/* Coins animés */}
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white"></div>
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white"></div>
+              </div>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Résultat du scan */}
+      {scanResult && (
+        <div className={`rounded-lg p-6 border ${scanResult.success
+            ? 'bg-green-50 border-green-200'
+            : 'bg-red-50 border-red-200'
+          }`}>
+          <div className="flex items-start gap-4">
+            {scanResult.success ? (
+              <CheckCircle className="w-8 h-8 text-green-600 flex-shrink-0" />
+            ) : (
+              <XCircle className="w-8 h-8 text-red-600 flex-shrink-0" />
+            )}
+            <div className="flex-1">
+              <h3 className={`text-xl font-bold mb-2 ${scanResult.success ? 'text-green-900' : 'text-red-900'
+                }`}>
+                {scanResult.success ? '✓ Succès' : '✗ Échec'}
+              </h3>
+              <p className={`text-sm mb-3 ${scanResult.success ? 'text-green-700' : 'text-red-700'
+                }`}>
+                {scanResult.message}
+              </p>
+              {scanResult.participant && (
+                <div className="mt-3 pt-3 border-t border-green-200">
+                  <p className="text-sm text-green-800">
+                    <strong>Participant:</strong> {scanResult.participant.name}
+                  </p>
+                  <p className="text-sm text-green-800">
+                    <strong>Événement:</strong> {scanResult.participant.event}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
