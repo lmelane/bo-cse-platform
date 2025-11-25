@@ -71,15 +71,15 @@ export default function UserDetailsModal({
                     {/* Badges Rôle et Statut */}
                     <div className="flex items-center gap-3">
                         <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${user.role === 'admin'
-                                ? 'bg-brand/10 text-brand'
-                                : 'bg-neutral-100 text-neutral-700'
+                            ? 'bg-brand/10 text-brand'
+                            : 'bg-neutral-100 text-neutral-700'
                             }`}>
                             <Shield className="w-4 h-4 mr-2" />
                             {user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
                         </span>
                         <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${user.onboardingCompleted
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-yellow-100 text-yellow-700'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-yellow-100 text-yellow-700'
                             }`}>
                             {user.onboardingCompleted ? 'Onboarding complété' : 'Onboarding en cours'}
                         </span>
@@ -158,7 +158,7 @@ export default function UserDetailsModal({
                                     </div>
                                 )}
 
-                                {user.interests && user.interests.length > 0 && (
+                                {user.interests && Array.isArray(user.interests) && user.interests.length > 0 && (
                                     <div>
                                         <span className="text-sm text-neutral-600 block mb-2">Centres d&apos;intérêt</span>
                                         <div className="flex flex-wrap gap-2">
@@ -197,9 +197,9 @@ export default function UserDetailsModal({
                                 <div>
                                     <span className="text-sm text-neutral-600">Statut</span>
                                     <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${user.subscriptionStatus === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                                            user.subscriptionStatus === 'INACTIVE' ? 'bg-gray-100 text-gray-700' :
-                                                user.subscriptionStatus === 'EXPIRED' ? 'bg-red-100 text-red-700' :
-                                                    'bg-neutral-100 text-neutral-700'
+                                        user.subscriptionStatus === 'INACTIVE' ? 'bg-gray-100 text-gray-700' :
+                                            user.subscriptionStatus === 'EXPIRED' ? 'bg-red-100 text-red-700' :
+                                                'bg-neutral-100 text-neutral-700'
                                         }`}>
                                         {user.subscriptionStatus === 'ACTIVE' ? 'Actif' :
                                             user.subscriptionStatus === 'INACTIVE' ? 'Inactif' :

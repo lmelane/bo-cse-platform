@@ -108,11 +108,11 @@ export function QRScanner() {
       // Appeler l'API de app-cse
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const endpoint = isManual ? '/api/admin/scanner/validate' : '/api/admin/scanner/validateQRCode';
-      const response = await fetch(`${apiUrl}${endpoint}`, {
+      const response = await fetch(`${apiUrl}${endpoint} `, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`,
+          'Authorization': `Bearer ${adminToken} `,
         },
         body: JSON.stringify({ qrToken }),
       });
@@ -238,7 +238,7 @@ export function QRScanner() {
           <div className="relative">
             <div
               id={qrReaderDivId}
-              className={`w-full rounded-lg overflow-hidden ${isScanning ? 'block' : 'hidden'}`}
+              className={`w - full rounded - lg overflow - hidden ${isScanning ? 'block' : 'hidden'} `}
               style={{ minHeight: '300px' }}
             />
 
@@ -263,12 +263,12 @@ export function QRScanner() {
 
           {/* Résultat du scan */}
           {scanResult && (
-            <div className={`mt-4 p-6 rounded-xl border-2 ${scanResult.success
-              ? 'bg-green-50 border-green-400'
-              : scanResult.alreadyScanned
-                ? 'bg-orange-50 border-orange-400'
-                : 'bg-red-50 border-red-400'
-              }`}>
+            <div className={`mt - 4 p - 6 rounded - xl border - 2 ${scanResult.success
+                ? 'bg-green-50 border-green-400'
+                : scanResult.alreadyScanned
+                  ? 'bg-orange-50 border-orange-400'
+                  : 'bg-red-50 border-red-400'
+              } `}>
               <div className="flex items-center gap-3">
                 {scanResult.success ? (
                   <CheckCircle className="w-10 h-10 text-green-600 flex-shrink-0" />
@@ -279,12 +279,12 @@ export function QRScanner() {
                 )}
 
                 <div className="flex-1">
-                  <p className={`font-bold text-xl mb-1 ${scanResult.success
-                    ? 'text-green-900'
-                    : scanResult.alreadyScanned
-                      ? 'text-orange-900'
-                      : 'text-red-900'
-                    }`}>
+                  <p className={`font - bold text - xl mb - 1 ${scanResult.success
+                      ? 'text-green-900'
+                      : scanResult.alreadyScanned
+                        ? 'text-orange-900'
+                        : 'text-red-900'
+                    } `}>
                     {scanResult.message}
                   </p>
 
