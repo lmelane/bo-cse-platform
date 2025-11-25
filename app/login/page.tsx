@@ -104,21 +104,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Informations */}
-          <div className="mt-6 p-4 bg-neutral-50 rounded-lg">
-            <p className="text-xs text-neutral-600 text-center">
-              ⚠️ Accès réservé aux administrateurs uniquement
-            </p>
-          </div>
+
         </div>
 
-        {/* Info développement */}
-        <div className="mt-4 text-center text-sm text-neutral-500">
-          <p>Identifiants par défaut :</p>
-          <p className="font-mono text-xs mt-1">
-            admin@cse.com / Admin123!
-          </p>
-        </div>
+
       </div>
     </div>
   );
