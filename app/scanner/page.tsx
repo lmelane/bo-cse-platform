@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { QRScanner } from '@/components/QRScanner';
+import QRScanner from '@/components/QRScanner';
 import { ArrowLeft, Camera, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 
