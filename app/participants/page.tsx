@@ -33,17 +33,18 @@ export default function ParticipantsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // UN SEUL appel API pour tout
       const token = tokenStorage.get();
       if (!token) {
         throw new Error('Token manquant');
       }
 
-      const url = selectedEventId === 'all' 
-        ? 'http://localhost:3001/api/admin/participants/dashboard'
-        : `http://localhost:3001/api/admin/participants/dashboard?eventId=${selectedEventId}`;
-      
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const url = selectedEventId === 'all'
+        ? `${API_URL}/api/admin/participants/dashboard`
+        : `${API_URL}/api/admin/participants/dashboard?eventId=${selectedEventId}`;
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -55,12 +56,12 @@ export default function ParticipantsPage() {
       }
 
       const data = await response.json();
-      
+
       // Mettre à jour les événements (seulement au premier chargement)
       if (events.length === 0) {
         setEvents(data.events);
       }
-      
+
       // Mettre à jour les participants et stats
       setParticipantsData(data as GlobalParticipantsResponse);
     } catch (err) {
@@ -130,7 +131,7 @@ export default function ParticipantsPage() {
 
     const eventName = selectedEventId === 'all' ? 'tous' : events.find(e => e.id === selectedEventId)?.title || 'event';
     const filename = `participants_${eventName}_${new Date().toISOString().split('T')[0]}.csv`;
-    
+
     exportToCSV(filename, headers, rows);
     toast.success(`${rows.length} participants exportés avec succès`);
   };
@@ -138,17 +139,17 @@ export default function ParticipantsPage() {
   // Filtrer les participants par recherche (debouncée)
   const filteredParticipants = participantsData?.participants.filter((participant) => {
     if (!debouncedSearchTerm) return true;
-    
+
     const searchLower = debouncedSearchTerm.toLowerCase();
     const firstName = participant.firstName?.toLowerCase() || '';
     const lastName = participant.lastName?.toLowerCase() || '';
     const email = participant.email?.toLowerCase() || '';
     const fullName = `${firstName} ${lastName}`;
-    
+
     return firstName.includes(searchLower) ||
-           lastName.includes(searchLower) ||
-           email.includes(searchLower) ||
-           fullName.includes(searchLower);
+      lastName.includes(searchLower) ||
+      email.includes(searchLower) ||
+      fullName.includes(searchLower);
   }) || [];
 
   // Utiliser les stats du serveur (pas besoin de recalculer)
@@ -344,14 +345,13 @@ export default function ParticipantsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200">
-                    {filteredParticipants.sort((a, b) => 
+                    {filteredParticipants.sort((a, b) =>
                       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                     ).map((participant) => (
                       <tr key={participant.id} className="hover:bg-neutral-50">
                         <td className="px-6 py-4">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
-                            participant.type === 'booking' ? 'bg-brand/10 text-brand' : 'bg-purple-100 text-purple-700'
-                          }`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${participant.type === 'booking' ? 'bg-brand/10 text-brand' : 'bg-purple-100 text-purple-700'
+                            }`}>
                             {participant.type === 'booking' ? 'Adhérent' : 'Invité'}
                           </span>
                         </td>
@@ -362,9 +362,8 @@ export default function ParticipantsPage() {
                         <td className="px-6 py-4 text-sm text-neutral-600">{participant.email}</td>
                         <td className="px-6 py-4 text-sm text-neutral-900">{participant.eventTitle}</td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${
-                            participant.presenceStatus === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${participant.presenceStatus === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                            }`}>
                             {participant.presenceStatus === 'PRESENT' ? 'Présent' : 'Absent'}
                           </span>
                         </td>
@@ -414,7 +413,7 @@ export default function ParticipantsPage() {
               Aucun participant
             </h3>
             <p className="text-neutral-600">
-              {selectedEventId === 'all' 
+              {selectedEventId === 'all'
                 ? "Aucun participant trouvé pour l'instant."
                 : "Cet événement n'a pas encore de participants."}
             </p>
