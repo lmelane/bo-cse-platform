@@ -1,38 +1,50 @@
-import axios from 'axios';
-import { tokenStorage } from './auth';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import axios, { AxiosError } from 'axios';
 
 // Instance axios configurée
+// Les appels /api/* sont proxiés par Next.js rewrites vers cse-plateform.
+// Pas de baseURL nécessaire — tout passe par le même origin (same-origin).
+// Le cookie httpOnly est envoyé automatiquement (same-origin, pas de CORS).
 export const api = axios.create({
-  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 secondes max par requête
+  timeout: 30000,
 });
 
-// Intercepteur pour ajouter le token JWT à toutes les requêtes
-api.interceptors.request.use((config) => {
-  const userToken = tokenStorage.get();
-  if (userToken) {
-    config.headers.Authorization = `Bearer ${userToken}`;
-  }
-  return config;
-});
-
-// Intercepteur de réponse pour gérer les erreurs d'authentification
+// Intercepteur de réponse pour gérer les erreurs
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Si 401 (non autorisé), déconnecter l'utilisateur
-    if (error.response?.status === 401) {
-      tokenStorage.remove();
-      // Rediriger vers login
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+  (error: AxiosError) => {
+    // Erreur réseau (pas de réponse du serveur)
+    if (!error.response) {
+      console.error('[API] Erreur réseau:', error.message);
+      return Promise.reject(new Error('Erreur de connexion au serveur. Vérifiez votre connexion internet.'));
+    }
+
+    // Si 401 (non autorisé), rediriger vers login
+    if (error.response.status === 401) {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login?session=expired';
       }
     }
+
+    // Si 403 (interdit), l'utilisateur n'a pas les droits
+    if (error.response.status === 403) {
+      console.error('[API] Accès refusé');
+    }
+
+    // Si 429 (rate limit), informer l'utilisateur
+    if (error.response.status === 429) {
+      console.error('[API] Trop de requêtes');
+      return Promise.reject(new Error('Trop de requêtes. Veuillez patienter quelques instants.'));
+    }
+
+    // Si 500+, erreur serveur
+    if (error.response.status >= 500) {
+      console.error('[API] Erreur serveur:', error.response.status);
+      return Promise.reject(new Error('Erreur serveur. Veuillez réessayer plus tard.'));
+    }
+
     return Promise.reject(error);
   }
 );
@@ -456,6 +468,99 @@ export const participantsApi = {
 
     const url = `/api/mgnt-sys-cse/participants${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await api.get<GlobalParticipantsResponse>(url);
+    return response.data;
+  },
+};
+
+// API Endpoints - Scanner (admin)
+export const scannerApi = {
+  validate: async (qrToken: string) => {
+    const response = await api.post<{
+      success: boolean;
+      message: string;
+      alreadyScanned?: boolean;
+      scannedAt?: string;
+      participant?: {
+        type?: string;
+        name: string;
+        email?: string;
+        event: string;
+        places?: number;
+        scannedAt?: string;
+      };
+    }>('/api/admin/scanner/validate', { qrToken });
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get<{
+      totalScans: number;
+      successfulScans: number;
+      failedScans: number;
+      duplicateScans: number;
+      todayScans: number;
+      attendanceRate: number;
+      scansPerHour: Array<{ hour: string; count: number }>;
+      recentScans: Array<{
+        id: string;
+        participantName: string;
+        eventTitle: string;
+        scannedAt: string;
+        success: boolean;
+      }>;
+      topEvents: Array<{
+        eventTitle: string;
+        totalParticipants: number;
+        scannedCount: number;
+        attendanceRate: number;
+      }>;
+    }>('/api/admin/scanner/stats');
+    return response.data;
+  },
+};
+
+// API Endpoints - Admin Dashboard
+export const dashboardApi = {
+  getEvents: async () => {
+    const response = await api.get('/api/admin/events/dashboard');
+    return response.data;
+  },
+
+  // BO1 fix: Agrégations serveur pour le dashboard (remplace le chargement total côté client)
+  getStats: async () => {
+    const response = await api.get<{
+      financial: {
+        totalRevenue: number;
+        arr: number;
+        mrr: number;
+        activeSubscriptions: number;
+        expiredSubscriptions: number;
+        inactiveSubscriptions: number;
+        churnRate: number;
+        eventBasedCount: number;
+        unlimitedCount: number;
+        conversionRate: number;
+        arpu: number;
+      };
+      events: {
+        total: number;
+        upcoming: number;
+        past: number;
+        cancelled: number;
+        online: number;
+      };
+      participants: {
+        totalBookings: number;
+        totalPlaces: number;
+        totalRevenue: number;
+        totalGuests: number;
+        guestsValidated: number;
+        guestsPending: number;
+        guestsRefused: number;
+        averagePerEvent: number;
+      };
+      totalUsers: number;
+    }>('/api/admin/dashboard/stats');
     return response.data;
   },
 };

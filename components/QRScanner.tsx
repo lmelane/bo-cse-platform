@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { tokenStorage } from '@/lib/auth';
+import { scannerApi } from '@/lib/api';
 
 interface ScanResult {
   success: boolean;
@@ -14,14 +14,107 @@ interface ScanResult {
   };
 }
 
+const RESULT_DISPLAY_DURATION_MS = 3000;
+
 export default function QRScanner() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [manualCode, setManualCode] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  // Deduplication: track recently scanned tokens to avoid double submissions
+  const recentTokensRef = useRef<Set<string>>(new Set());
+  const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Lazy-init a single AudioContext (avoids leak)
+  const getAudioContext = useCallback(() => {
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    }
+    // Resume suspended context (browsers suspend after user interaction)
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+    return audioContextRef.current;
+  }, []);
+
+  const playSound = useCallback((frequency: number, type: OscillatorType, duration: number) => {
+    try {
+      const ctx = getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+
+      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + duration);
+    } catch {
+      // Audio playback is best-effort
+    }
+  }, [getAudioContext]);
+
+  const playSuccessSound = useCallback(() => playSound(800, 'sine', 0.2), [playSound]);
+  const playErrorSound = useCallback(() => playSound(200, 'sawtooth', 0.3), [playSound]);
+
+  const clearResultAfterDelay = useCallback(() => {
+    if (resultTimerRef.current) {
+      clearTimeout(resultTimerRef.current);
+    }
+    resultTimerRef.current = setTimeout(() => {
+      setScanResult(null);
+      resultTimerRef.current = null;
+    }, RESULT_DISPLAY_DURATION_MS);
+  }, []);
+
+  const validateQRCode = useCallback(async (qrToken: string): Promise<void> => {
+    // Client-side deduplication: skip if we just validated this token
+    if (recentTokensRef.current.has(qrToken)) {
+      return;
+    }
+
+    // Basic format validation for camera scans
+    if (!qrToken || qrToken.length > 4096) {
+      setScanResult({ success: false, message: 'QR code invalide' });
+      playErrorSound();
+      clearResultAfterDelay();
+      return;
+    }
+
+    setIsValidating(true);
+
+    // Add to recent tokens; remove after 10s to allow re-scan
+    recentTokensRef.current.add(qrToken);
+    setTimeout(() => recentTokensRef.current.delete(qrToken), 10000);
+
+    try {
+      const data = await scannerApi.validate(qrToken);
+
+      if (data.success) {
+        playSuccessSound();
+      } else {
+        playErrorSound();
+      }
+
+      setScanResult(data);
+    } catch (error) {
+      console.error('Erreur validation:', error);
+      const message = error instanceof Error ? error.message : 'Erreur de connexion au serveur';
+      setScanResult({ success: false, message });
+      playErrorSound();
+    } finally {
+      setIsValidating(false);
+      clearResultAfterDelay();
+    }
+  }, [playSuccessSound, playErrorSound, clearResultAfterDelay]);
 
   useEffect(() => {
-    // Initialiser le scanner uniquement si on n'a pas encore de scanner
     if (!scannerRef.current) {
       const scanner = new Html5QrcodeScanner(
         'qr-reader',
@@ -38,135 +131,49 @@ export default function QRScanner() {
 
       scanner.render(
         async (decodedText) => {
-          // Pause le scanner pendant la validation
+          // Pause scanner during validation
           scanner.pause();
 
           await validateQRCode(decodedText);
 
-          // Reprendre le scan après 3 secondes si succès ou erreur
-          setTimeout(() => {
-            // On vérifie si le scanner existe toujours avant de resume
-            if (scannerRef.current) {
-              try {
-                scanner.resume();
-              } catch (e) {
-                console.log('Scanner resume error:', e);
-              }
+          // Resume AFTER validation completes (not on a fixed timer)
+          if (scannerRef.current) {
+            try {
+              scanner.resume();
+            } catch (e) {
+              console.log('Scanner resume error:', e);
             }
-            setScanResult(null);
-          }, 3000);
+          }
         },
-        (error) => {
-          // Erreurs de scan silencieuses (pas de QR code détecté)
-          // console.warn(error);
+        () => {
+          // Silent scan errors (no QR code detected)
         }
       );
     }
 
     return () => {
+      if (resultTimerRef.current) {
+        clearTimeout(resultTimerRef.current);
+      }
       if (scannerRef.current) {
         scannerRef.current.clear().catch(error => {
           console.error('Failed to clear html5-qrcode scanner', error);
         });
         scannerRef.current = null;
       }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
     };
-  }, []);
-
-  const playSuccessSound = () => {
-    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 800;
-    oscillator.type = 'sine';
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.2);
-  };
-
-  const playErrorSound = () => {
-    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 200;
-    oscillator.type = 'sawtooth';
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
-  };
-
-  const validateQRCode = async (qrToken: string) => {
-    setIsValidating(true);
-
-    try {
-      const token = tokenStorage.get();
-      if (!token) {
-        setScanResult({
-          success: false,
-          message: 'Session expirée. Veuillez vous reconnecter.',
-        });
-        playErrorSound();
-        return;
-      }
-
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-      const response = await fetch(`${API_URL}/api/admin/scanner/validate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Token': token, // Header spécifique demandé
-        },
-        body: JSON.stringify({ qrToken }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        playSuccessSound();
-      } else {
-        playErrorSound();
-      }
-
-      setScanResult(data);
-
-    } catch (error) {
-      console.error('Erreur validation:', error);
-      setScanResult({
-        success: false,
-        message: 'Erreur de connexion au serveur',
-      });
-      playErrorSound();
-    } finally {
-      setIsValidating(false);
-    }
-  };
+  }, [validateQRCode]);
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualCode.trim()) return;
+    if (!manualCode.trim() || isValidating) return;
 
     await validateQRCode(manualCode.trim());
     setManualCode('');
-
-    // Clear result after 3 seconds for manual entry too
-    setTimeout(() => {
-      setScanResult(null);
-    }, 3000);
   };
 
   return (

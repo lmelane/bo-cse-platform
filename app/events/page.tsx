@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
-import { eventsApi, participantsApi, Event, GlobalParticipantsResponse } from '@/lib/api';
+import { eventsApi, dashboardApi, Event, GlobalParticipantsResponse } from '@/lib/api';
 import EventFormModal from '@/components/EventFormModal';
-import { tokenStorage } from '@/lib/auth';
+import Pagination from '@/components/Pagination';
 import {
   Calendar, Search, Loader2, AlertCircle, Plus, Edit, Trash2,
   Globe, EyeOff, FileText, MoreVertical, Users, UserCheck, Euro,
@@ -12,7 +13,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 interface EventAttendance {
   totalParticipants: number;
@@ -22,22 +23,46 @@ interface EventAttendance {
 }
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [participants, setParticipants] = useState<GlobalParticipantsResponse | null>(null);
-  const [eventAttendance, setEventAttendance] = useState<Map<string, EventAttendance>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [error, setError] = useState('');
+  const queryClient = useQueryClient();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEventId, setFilterEventId] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   // URL du site frontend pour voir l'événement
   const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['events-dashboard'],
+    queryFn: () => dashboardApi.getEvents(),
+  });
+
+  const events: Event[] = data?.events ?? [];
+  const participants: GlobalParticipantsResponse | null = data?.participants ?? null;
+  const eventAttendance: Map<string, EventAttendance> = (() => {
+    const map = new Map<string, EventAttendance>();
+    if (data?.attendance) {
+      Object.entries(data.attendance).forEach(([eventId, stats]) => {
+        map.set(eventId, stats as EventAttendance);
+      });
+    }
+    return map;
+  })();
+
+  const loadingStats = loading;
+  const error = queryError
+    ? (queryError as { response?: { data?: { message?: string } } }).response?.data?.message ??
+      'Erreur lors du chargement des événements'
+    : '';
 
   // Ouvrir l'événement dans un nouvel onglet
   const handleViewEvent = (event: Event) => {
@@ -45,63 +70,6 @@ export default function EventsPage() {
     window.open(eventUrl, '_blank', 'noopener,noreferrer');
     setOpenMenuId(null);
   };
-
-  useEffect(() => {
-    loadDashboard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadDashboard = async () => {
-    // Éviter les appels simultanés
-    if (isRefreshing) return;
-
-    try {
-      setIsRefreshing(true);
-      setLoading(true);
-      setLoadingStats(true);
-      setError('');
-
-      const token = tokenStorage.get();
-      if (!token) {
-        setError('Token manquant');
-        return;
-      }
-
-      // UN SEUL appel API pour tout
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${API_URL}/api/admin/events/dashboard`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement');
-      }
-
-      const data = await response.json();
-
-      setEvents(data.events);
-      setParticipants(data.participants);
-
-      // Convertir l'objet attendance en Map
-      const attendanceMap = new Map<string, EventAttendance>();
-      Object.entries(data.attendance).forEach(([eventId, stats]) => {
-        attendanceMap.set(eventId, stats as EventAttendance);
-      });
-      setEventAttendance(attendanceMap);
-
-    } catch (err) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Erreur lors du chargement des événements');
-      toast.error('Erreur lors du chargement des événements');
-    } finally {
-      setLoading(false);
-      setLoadingStats(false);
-      setIsRefreshing(false);
-    }
-  };
-
 
   const handleCreate = () => {
     setSelectedEvent(null);
@@ -129,7 +97,7 @@ export default function EventsPage() {
       }
 
       setIsModalOpen(false);
-      await loadDashboard();
+      await queryClient.invalidateQueries({ queryKey: ['events-dashboard'] });
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'Une erreur est survenue');
@@ -144,7 +112,7 @@ export default function EventsPage() {
     try {
       await eventsApi.delete(event.id);
       toast.success('Événement supprimé');
-      await loadDashboard();
+      await queryClient.invalidateQueries({ queryKey: ['events-dashboard'] });
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'Erreur lors de la suppression');
@@ -157,7 +125,7 @@ export default function EventsPage() {
       await eventsApi.updatePublication(event.id, state);
       const stateLabels = { online: 'en ligne', offline: 'hors ligne', draft: 'en brouillon' };
       toast.success(`Événement mis ${stateLabels[state]}`);
-      await loadDashboard();
+      await queryClient.invalidateQueries({ queryKey: ['events-dashboard'] });
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour');
@@ -165,11 +133,32 @@ export default function EventsPage() {
     setOpenMenuId(null);
   };
 
-  const filteredEvents = events.filter(event =>
-    event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    event.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    event.city?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // BO5 fix: appliquer le filtre par événement ET la recherche texte
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = !searchTerm ||
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterEventId === 'all' || event.id === filterEventId;
+    return matchesSearch && matchesFilter;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
+  const paginatedEvents = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredEvents.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredEvents, currentPage, ITEMS_PER_PAGE]);
+
+  // Reset page when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+  const handleFilterChange = (value: string) => {
+    setFilterEventId(value);
+    setCurrentPage(1);
+  };
 
   const getStatusBadge = (status: Event['status']) => {
     const styles = {
@@ -254,7 +243,7 @@ export default function EventsPage() {
                   type="text"
                   placeholder="Rechercher par titre, slug ou ville..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="w-full pl-11 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 />
               </div>
@@ -264,7 +253,7 @@ export default function EventsPage() {
             <div className="w-full md:w-80">
               <select
                 value={filterEventId}
-                onChange={(e) => setFilterEventId(e.target.value)}
+                onChange={(e) => handleFilterChange(e.target.value)}
                 className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
               >
                 <option value="all">Tous les événements</option>
@@ -388,7 +377,7 @@ export default function EventsPage() {
           <>
             {/* Vue mobile : Cartes */}
             <div className="lg:hidden space-y-4">
-              {filteredEvents.map((event) => {
+              {paginatedEvents.map((event) => {
                 const attendance = eventAttendance.get(event.id);
                 return (
                   <div key={event.id} className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
@@ -561,7 +550,7 @@ export default function EventsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200">
-                    {filteredEvents.map((event) => (
+                    {paginatedEvents.map((event) => (
                       <tr key={event.id} className="hover:bg-neutral-50 transition-colors">
                         <td className="px-3 py-3">
                           <div className="flex items-start gap-2">
@@ -752,6 +741,17 @@ export default function EventsPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Pagination */}
+        {!loading && filteredEvents.length > ITEMS_PER_PAGE && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredEvents.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
 

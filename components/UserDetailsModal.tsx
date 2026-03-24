@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, User, Mail, Briefcase, Calendar, DollarSign, Shield, Link as LinkIcon, Award, TrendingUp, Tag } from 'lucide-react';
+import { X, User, Mail, Briefcase, Calendar, DollarSign, Shield, Link as LinkIcon, Award, Tag } from 'lucide-react';
 import { User as UserType } from '@/lib/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -70,12 +70,12 @@ export default function UserDetailsModal({
                 <div className="p-6 space-y-6">
                     {/* Badges Rôle et Statut */}
                     <div className="flex items-center gap-3">
-                        <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${user.role === 'admin'
+                        <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${user.role.toLowerCase() === 'admin'
                             ? 'bg-brand/10 text-brand'
                             : 'bg-neutral-100 text-neutral-700'
                             }`}>
                             <Shield className="w-4 h-4 mr-2" />
-                            {user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}
+                            {user.role.toLowerCase() === 'admin' ? 'Administrateur' : 'Utilisateur'}
                         </span>
                         <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${user.onboardingCompleted
                             ? 'bg-green-100 text-green-700'

@@ -1,73 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { Camera, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
-import { tokenStorage } from '@/lib/auth';
+import { scannerApi } from '@/lib/api';
 
-interface ScanStats {
-  totalScans: number;
-  successfulScans: number;
-  failedScans: number;
-  duplicateScans: number;
-  todayScans: number;
-  attendanceRate: number;
-  scansPerHour: { hour: string; count: number }[];
-  recentScans: {
-    id: string;
-    participantName: string;
-    eventTitle: string;
-    scannedAt: string;
-    success: boolean;
-  }[];
-  topEvents: {
-    eventTitle: string;
-    totalParticipants: number;
-    scannedCount: number;
-    attendanceRate: number;
-  }[];
-}
+type ScanStats = Awaited<ReturnType<typeof scannerApi.getStats>>;
 
 export default function ScannerStatsPage() {
-  const [stats, setStats] = useState<ScanStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: stats, isLoading: loading, error: queryError } = useQuery<ScanStats>({
+    queryKey: ['scanner-stats'],
+    queryFn: () => scannerApi.getStats(),
+    refetchInterval: 30000,
+  });
 
-  useEffect(() => {
-    loadStats();
-    // Auto-refresh toutes les 30 secondes
-    const interval = setInterval(loadStats, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadStats = async () => {
-    try {
-      const adminToken = tokenStorage.get();
-      if (!adminToken) {
-        setError('Token admin manquant - Veuillez vous reconnecter');
-        return;
-      }
-
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${API_URL}/api/admin/scanner/stats`, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Erreur chargement stats');
-
-      const data = await response.json();
-      setStats(data);
-      setError(null);
-    } catch (err) {
-      console.error('Error loading stats:', err);
-      setError('Erreur lors du chargement des statistiques');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const error = queryError ? (queryError instanceof Error ? queryError.message : 'Erreur lors du chargement des statistiques') : null;
 
   return (
     <AdminLayout>

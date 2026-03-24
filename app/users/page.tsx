@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { usersApi, type User } from '@/lib/api';
 import { User as UserIcon, Shield, ShieldOff, Loader2, Euro, TrendingUp, MoreVertical, Search, Filter, Download } from 'lucide-react';
@@ -11,9 +12,17 @@ import Pagination from '@/components/Pagination';
 import UserDetailsModal from '@/components/UserDetailsModal';
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { data: users = [], isLoading: loading, error: queryError } = useQuery<User[]>({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const response = await usersApi.getAll();
+      return response.data;
+    },
+  });
+
+  const error = queryError ? (queryError as { response?: { data?: { message?: string } } }).response?.data?.message || 'Erreur lors du chargement des utilisateurs' : null;
+
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -29,26 +38,6 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 50;
 
-  // Charger les utilisateurs
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await usersApi.getAll();
-      setUsers(response.data);
-    } catch (err) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Erreur lors du chargement des utilisateurs');
-      console.error('Error loading users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Changer le rôle d'un utilisateur
   const handleRoleChange = async (userId: string, currentRole: 'user' | 'admin') => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
@@ -61,7 +50,7 @@ export default function UsersPage() {
       await usersApi.updateRole(userId, newRole);
       toast.success(`Rôle mis à jour avec succès : ${newRole}`);
       // Recharger la liste
-      await loadUsers();
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour du rôle');
@@ -92,7 +81,8 @@ export default function UsersPage() {
       'Date de mise à jour'
     ];
 
-    const rows = users.map(user => [
+    // BO-CSV fix: exporter les utilisateurs filtrés, pas tous
+    const rows = filteredUsers.map(user => [
       user.id,
       user.email,
       user.firstName,
@@ -113,7 +103,7 @@ export default function UsersPage() {
 
     const filename = `utilisateurs_${new Date().toISOString().split('T')[0]}.csv`;
     exportToCSV(filename, headers, rows);
-    toast.success(`${users.length} utilisateurs exportés avec succès`);
+    toast.success(`${filteredUsers.length} utilisateurs exportés avec succès`);
   };
 
   // Format date
@@ -387,17 +377,17 @@ export default function UsersPage() {
                       {/* Rôle */}
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${user.role.toLowerCase() === 'admin'
                             ? 'bg-brand/10 text-brand'
                             : 'bg-neutral-100 text-neutral-700'
                             }`}
                         >
-                          {user.role === 'admin' ? (
+                          {user.role.toLowerCase() === 'admin' ? (
                             <Shield className="w-3 h-3" />
                           ) : (
                             <UserIcon className="w-3 h-3" />
                           )}
-                          {user.role === 'admin' ? 'Admin' : 'Utilisateur'}
+                          {user.role.toLowerCase() === 'admin' ? 'Admin' : 'Utilisateur'}
                         </span>
                       </td>
 
@@ -472,7 +462,7 @@ export default function UsersPage() {
                                   }}
                                   className="w-full text-left px-4 py-2 hover:bg-neutral-50 transition-colors flex items-center gap-3"
                                 >
-                                  {user.role === 'admin' ? (
+                                  {user.role.toLowerCase() === 'admin' ? (
                                     <>
                                       <ShieldOff className="w-4 h-4 text-neutral-600" />
                                       <span className="text-sm text-neutral-700">Retirer admin</span>
@@ -492,7 +482,7 @@ export default function UsersPage() {
                                       const response = await usersApi.getById(user.id);
                                       setSelectedUser(response.data);
                                       setIsDetailsModalOpen(true);
-                                    } catch (err) {
+                                    } catch {
                                       toast.error('Erreur lors du chargement des détails');
                                     }
                                   }}

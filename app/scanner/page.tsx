@@ -2,11 +2,13 @@
 
 import React from 'react';
 import QRScanner from '@/components/QRScanner';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { ArrowLeft, Camera, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ScannerPage() {
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-neutral-50">
       {/* Header blanc + texte plus petit */}
       <div className="bg-white border-b border-neutral-200 shadow-sm">
@@ -40,5 +42,6 @@ export default function ScannerPage() {
         <QRScanner />
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
+import Pagination from '@/components/Pagination';
 import { Event, GlobalParticipantsResponse, GlobalParticipant, api, eventsApi, ParticipantBooking } from '@/lib/api';
-import { tokenStorage } from '@/lib/auth';
 import { Users, Loader2, Calendar, DollarSign, UserCheck, UserX, Clock, Search, Download, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -13,34 +14,27 @@ import toast from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
 
 export default function ParticipantsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('all');
-  const [participantsData, setParticipantsData] = useState<GlobalParticipantsResponse | null>(null);
-  const [flattenedParticipants, setFlattenedParticipants] = useState<GlobalParticipant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
   const [selectedParticipant, setSelectedParticipant] = useState<GlobalParticipant | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
 
-  // Charger au montage et quand l'événement change
-  useEffect(() => {
-    loadDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEventId]);
+  // Charger les événements pour le filtre
+  const { data: events = [] } = useQuery<Event[]>({
+    queryKey: ['participants-events'],
+    queryFn: async () => {
+      const eventsResponse = await eventsApi.getAll();
+      return eventsResponse.data;
+    },
+  });
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const token = tokenStorage.get();
-      if (!token) {
-        throw new Error('Token manquant');
-      }
-
-      // Utiliser la bonne route API
+  // Charger les participants (re-fetch quand selectedEventId change)
+  const { data: participantsQueryData, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['participants', selectedEventId],
+    queryFn: async () => {
       const url = selectedEventId === 'all'
         ? '/api/mgnt-sys-cse/participants'
         : `/api/mgnt-sys-cse/participants?eventId=${selectedEventId}`;
@@ -48,19 +42,8 @@ export default function ParticipantsPage() {
       const response = await api.get<GlobalParticipantsResponse>(url);
       const apiData = response.data;
 
-      // Mettre à jour les événements si ce n'est pas déjà fait
-      if (events.length === 0 && selectedEventId === 'all') {
-        // Charger les événements pour le filtre
-        try {
-          const eventsResponse = await eventsApi.getAll();
-          setEvents(eventsResponse.data);
-        } catch (err) {
-          console.error('Error loading events:', err);
-        }
-      }
-
       // Transformer les données : aplatir bookings + guests
-      const flattenedParticipants: GlobalParticipant[] = apiData.data.flatMap((booking: ParticipantBooking) => {
+      const flattened: GlobalParticipant[] = apiData.data.flatMap((booking: ParticipantBooking) => {
         const participants: GlobalParticipant[] = [];
 
         // Ajouter l'adhérent (titulaire de la réservation)
@@ -110,25 +93,21 @@ export default function ParticipantsPage() {
         return participants;
       });
 
-      // Mettre à jour les participants et stats
-      setParticipantsData({
-        success: apiData.success,
-        stats: apiData.stats,
-        data: apiData.data,
-        pagination: apiData.pagination,
-      });
+      return {
+        participantsData: {
+          success: apiData.success,
+          stats: apiData.stats,
+          data: apiData.data,
+          pagination: apiData.pagination,
+        } as GlobalParticipantsResponse,
+        flattenedParticipants: flattened,
+      };
+    },
+  });
 
-      // Stocker les participants aplatis
-      setFlattenedParticipants(flattenedParticipants);
-
-    } catch (err) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Erreur lors du chargement des données');
-      console.error('Error loading dashboard data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const error = queryError ? (queryError as { response?: { data?: { message?: string } } }).response?.data?.message || 'Erreur lors du chargement des données' : null;
+  const participantsData = participantsQueryData?.participantsData ?? null;
+  const flattenedParticipants = participantsQueryData?.flattenedParticipants ?? [];
 
   const formatPrice = (cents: number) => {
     return (cents / 100).toFixed(2) + ' €';
@@ -214,6 +193,16 @@ export default function ParticipantsPage() {
       email.includes(searchLower) ||
       fullName.includes(searchLower);
   }) || [];
+
+  // Pagination
+  const totalPages = Math.ceil(filteredParticipants.length / ITEMS_PER_PAGE);
+  const paginatedParticipants = useMemo(() => {
+    const sorted = [...filteredParticipants].sort((a: GlobalParticipant, b: GlobalParticipant) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return sorted.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredParticipants, currentPage, ITEMS_PER_PAGE]);
 
   // Utiliser les stats du serveur (pas besoin de recalculer)
   const filteredStats = participantsData?.stats || {
@@ -408,9 +397,7 @@ export default function ParticipantsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200">
-                    {filteredParticipants.sort((a: GlobalParticipant, b: GlobalParticipant) =>
-                      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                    ).map((participant: GlobalParticipant) => (
+                    {paginatedParticipants.map((participant: GlobalParticipant) => (
                       <tr key={participant.id} className="hover:bg-neutral-50">
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${participant.type === 'booking' ? 'bg-brand/10 text-brand' : 'bg-purple-100 text-purple-700'
@@ -506,6 +493,17 @@ export default function ParticipantsPage() {
                 : "Cet événement n'a pas encore de participants."}
             </p>
           </div>
+        )}
+
+        {/* Pagination */}
+        {filteredParticipants.length > ITEMS_PER_PAGE && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredParticipants.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
 

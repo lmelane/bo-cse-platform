@@ -4,6 +4,56 @@ import { z } from 'zod';
  * Schémas de validation Zod pour les opérations critiques
  */
 
+// Validation création/modification d'événement
+export const eventSchema = z.object({
+  title: z.string().min(3, 'Le titre doit contenir au moins 3 caractères').max(200, 'Le titre est trop long'),
+  slug: z.string()
+    .min(3, 'Le slug doit contenir au moins 3 caractères')
+    .max(100, 'Le slug est trop long')
+    .regex(/^[a-z0-9-]+$/, 'Le slug ne peut contenir que des lettres minuscules, chiffres et tirets'),
+  subtitle: z.string().max(300, 'Le sous-titre est trop long').optional().nullable(),
+  categoryTag: z.string().min(1, 'La catégorie est requise'),
+  eventType: z.enum(['PHYSICAL', 'WEBINAR'], { message: 'Type d\'événement invalide' }),
+  webinarUrl: z.string().url('URL du webinar invalide').optional().nullable()
+    .refine((val) => val === null || val === '' || val === undefined || z.string().url().safeParse(val).success, {
+      message: 'URL du webinar invalide',
+    }),
+  startsAt: z.string().optional().nullable(),
+  endsAt: z.string().optional().nullable(),
+  venueName: z.string().max(200, 'Nom du lieu trop long').optional().nullable(),
+  fullAddress: z.string().max(500, 'Adresse trop longue').optional().nullable(),
+  minPriceCents: z.number().min(0, 'Le prix ne peut pas être négatif').optional().nullable(),
+  maxParticipants: z.number().int().min(1, 'Le nombre de participants doit être au moins 1').optional().nullable(),
+  limitedThreshold: z.number().int().min(1, 'Le seuil doit être au moins 1').optional().nullable(),
+  coverImageUrl: z.string().url('URL de l\'image invalide').optional().nullable()
+    .refine((val) => val === null || val === '' || val === undefined || z.string().url().safeParse(val).success, {
+      message: 'URL de l\'image invalide',
+    }),
+  descriptionHtml: z.string().max(50000, 'Description trop longue').optional().nullable(),
+  publicationStatus: z.enum(['online', 'draft', 'offline']).optional(),
+  status: z.enum(['scheduled', 'ongoing', 'completed', 'cancelled']).optional(),
+}).refine((data) => {
+  // Si c'est un webinar, l'URL est requise
+  if (data.eventType === 'WEBINAR' && (!data.webinarUrl || data.webinarUrl.trim() === '')) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'L\'URL du webinar est requise pour les événements en ligne',
+  path: ['webinarUrl'],
+}).refine((data) => {
+  // Vérifier que la date de fin est après la date de début
+  if (data.startsAt && data.endsAt) {
+    return new Date(data.endsAt) > new Date(data.startsAt);
+  }
+  return true;
+}, {
+  message: 'La date de fin doit être après la date de début',
+  path: ['endsAt'],
+});
+
+export type EventInput = z.infer<typeof eventSchema>;
+
 // Validation changement de rôle
 export const updateRoleSchema = z.object({
   userId: z.string().uuid('ID utilisateur invalide'),

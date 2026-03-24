@@ -36,9 +36,18 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
   }
 
   const setLink = () => {
-    const url = window.prompt('URL');
-    if (url) {
+    const url = window.prompt('URL (https://...)');
+    if (!url) return;
+
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+        alert('URL invalide. Seuls http, https et mailto sont autorisés.');
+        return;
+      }
       editor.chain().focus().setLink({ href: url }).run();
+    } catch {
+      alert('URL invalide');
     }
   };
 

@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Event } from '@/lib/api';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, AlertCircle } from 'lucide-react';
 import AddressAutocomplete from './AddressAutocomplete';
+import { eventSchema } from '@/lib/validations';
 
 const RichTextEditor = dynamic(() => import('./RichTextEditor'), { ssr: false });
 
@@ -17,6 +18,7 @@ interface EventFormModalProps {
 }
 
 export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoading }: EventFormModalProps) {
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<Partial<Event>>({
     // Informations principales
     title: '',
@@ -209,6 +211,42 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationErrors({});
+
+    // Préparer les données pour validation
+    const dataToValidate = {
+      title: formData.title || '',
+      slug: formData.slug || '',
+      subtitle: formData.subtitle || null,
+      categoryTag: formData.categoryTag || '',
+      eventType: formData.eventType || 'PHYSICAL',
+      webinarUrl: formData.webinarUrl || null,
+      startsAt: formData.startsAt || null,
+      endsAt: formData.endsAt || null,
+      venueName: formData.venueName || null,
+      fullAddress: formData.fullAddress || null,
+      minPriceCents: formData.minPriceCents || null,
+      maxParticipants: formData.maxParticipants || null,
+      limitedThreshold: formData.limitedThreshold || null,
+      coverImageUrl: formData.coverImageUrl || null,
+      descriptionHtml: formData.descriptionHtml || null,
+      publicationStatus: formData.publicationStatus,
+      status: formData.status,
+    };
+
+    // Valider avec Zod
+    const result = eventSchema.safeParse(dataToValidate);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const path = issue.path.join('.');
+        if (!errors[path]) {
+          errors[path] = issue.message;
+        }
+      });
+      setValidationErrors(errors);
+      return;
+    }
 
     // Convertir les dates datetime-local vers ISO pour l'API
     const dataToSubmit = {
@@ -253,6 +291,23 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
         {/* Form */}
         <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="p-6 space-y-6">
+            {/* Erreurs de validation globales */}
+            {Object.keys(validationErrors).length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-900">Erreurs de validation</h4>
+                    <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
+                      {Object.entries(validationErrors).map(([field, message]) => (
+                        <li key={field}>{message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Informations principales */}
             <div className="space-y-4">
               <h3 className="font-semibold text-neutral-900">
@@ -270,9 +325,12 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     value={formData.title}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent ${validationErrors.title ? 'border-red-500' : 'border-neutral-300'}`}
                     placeholder="Nom de l'événement"
                   />
+                  {validationErrors.title && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.title}</p>
+                  )}
                 </div>
 
                 <div className="md:col-span-2">
