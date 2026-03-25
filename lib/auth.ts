@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AUTH_TIMEOUT } from './config';
 
 export interface AuthUser {
   id: string;
@@ -12,7 +13,7 @@ export interface AuthUser {
 // Les appels /api/* sont proxiés par Next.js rewrites — same-origin, pas de CORS
 const authClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
+  timeout: AUTH_TIMEOUT,
 });
 
 // Service d'authentification

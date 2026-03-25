@@ -12,15 +12,16 @@ import { exportToCSV } from '@/lib/csv-utils';
 import ParticipantDetailsModal from '@/components/ParticipantDetailsModal';
 import toast from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
+import { ITEMS_PER_PAGE_PARTICIPANTS, SEARCH_DEBOUNCE_MS } from '@/lib/config';
 
 export default function ParticipantsPage() {
   const [selectedEventId, setSelectedEventId] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+  const [debouncedSearchTerm] = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
   const [selectedParticipant, setSelectedParticipant] = useState<GlobalParticipant | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 50;
+  const ITEMS_PER_PAGE = ITEMS_PER_PAGE_PARTICIPANTS;
 
   // Charger les événements pour le filtre
   const { data: events = [] } = useQuery<Event[]>({
@@ -219,21 +220,21 @@ export default function ParticipantsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-neutral-900">Participants</h1>
-            <p className="text-sm md:text-base text-neutral-600 mt-1 md:mt-2">
+            <h1 className="text-base font-semibold text-neutral-900">Participants</h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
               Gérer les participants aux événements
             </p>
           </div>
           {!loading && participantsData && flattenedParticipants.length > 0 && (
             <button
               onClick={handleExportParticipants}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-dark text-white rounded-md transition-colors font-medium text-xs whitespace-nowrap"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Exporter les participants</span>
               <span className="sm:hidden">Exporter</span>
             </button>
@@ -256,34 +257,28 @@ export default function ParticipantsPage() {
 
         {/* Recherche et filtres */}
         {!loading && !error && (
-          <div className="bg-white rounded-xl border border-neutral-200 p-6">
-            <div className="space-y-4">
+          <div className="bg-white rounded-md border border-neutral-200 p-3">
+            <div className="flex flex-col md:flex-row gap-2.5">
               {/* Barre de recherche */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Rechercher un participant
-                </label>
+              <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                   <input
                     type="text"
                     placeholder="Rechercher par nom, prénom ou email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   />
                 </div>
               </div>
 
               {/* Sélecteur d'événement */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Filtrer par événement
-                </label>
+              <div className="w-full md:w-72">
                 <select
                   value={selectedEventId}
                   onChange={(e) => setSelectedEventId(e.target.value)}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                 >
                   <option value="all">Tous les événements</option>
                   {events.map((event) => (
@@ -300,19 +295,19 @@ export default function ParticipantsPage() {
         {/* Statistiques */}
         {participantsData && !loading && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Total Réservations */}
-              <div className="bg-white p-6 rounded-xl border border-neutral-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="bg-white p-3 rounded-md border border-neutral-200">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-blue-50 rounded-md">
+                    <Calendar className="w-4 h-4 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-neutral-600">Réservations</p>
-                    <p className="text-2xl font-bold text-neutral-900">
+                    <p className="text-xs text-neutral-500">Réservations</p>
+                    <p className="text-lg font-semibold text-neutral-900">
                       {filteredStats.totalBookings}
                     </p>
-                    <p className="text-xs text-neutral-500 mt-1">
+                    <p className="text-[11px] text-neutral-400">
                       {filteredStats.totalPlaces} places
                     </p>
                   </div>
@@ -320,17 +315,17 @@ export default function ParticipantsPage() {
               </div>
 
               {/* Revenu Total */}
-              <div className="bg-white p-6 rounded-xl border border-neutral-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="bg-white p-3 rounded-md border border-neutral-200">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-green-50 rounded-md">
+                    <DollarSign className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-neutral-600">Revenu total</p>
-                    <p className="text-2xl font-bold text-neutral-900">
+                    <p className="text-xs text-neutral-500">Revenu total</p>
+                    <p className="text-lg font-semibold text-neutral-900">
                       {formatPrice(filteredStats.totalRevenue)}
                     </p>
-                    <p className="text-xs text-neutral-500 mt-1">
+                    <p className="text-[11px] text-neutral-400">
                       {filteredStats.paidBookings} payées / {filteredStats.unpaidBookings} impayées
                     </p>
                   </div>
@@ -338,14 +333,14 @@ export default function ParticipantsPage() {
               </div>
 
               {/* Total Invités */}
-              <div className="bg-white p-6 rounded-xl border border-neutral-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <Users className="w-6 h-6 text-purple-600" />
+              <div className="bg-white p-3 rounded-md border border-neutral-200">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-purple-50 rounded-md">
+                    <Users className="w-4 h-4 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-neutral-600">Total invités</p>
-                    <p className="text-2xl font-bold text-neutral-900">
+                    <p className="text-xs text-neutral-500">Total invités</p>
+                    <p className="text-lg font-semibold text-neutral-900">
                       {filteredStats.totalGuests}
                     </p>
                   </div>
@@ -353,19 +348,19 @@ export default function ParticipantsPage() {
               </div>
 
               {/* Statut des invités */}
-              <div className="bg-white p-6 rounded-xl border border-neutral-200">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-neutral-700">Statut invités</p>
-                  <div className="flex items-center gap-2 text-xs">
-                    <UserCheck className="w-4 h-4 text-green-600" />
+              <div className="bg-white p-3 rounded-md border border-neutral-200">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-neutral-600">Statut invités</p>
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <UserCheck className="w-3.5 h-3.5 text-green-600" />
                     <span className="text-neutral-600">Validés: {filteredStats.guestsValidated}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <Clock className="w-4 h-4 text-yellow-600" />
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <Clock className="w-3.5 h-3.5 text-yellow-600" />
                     <span className="text-neutral-600">En attente: {filteredStats.guestsPending}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <UserX className="w-4 h-4 text-red-600" />
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <UserX className="w-3.5 h-3.5 text-red-600" />
                     <span className="text-neutral-600">Refusés: {filteredStats.guestsRefused}</span>
                   </div>
                 </div>
@@ -373,12 +368,12 @@ export default function ParticipantsPage() {
             </div>
 
             {/* Tableau des participants */}
-            <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-              <div className="px-4 md:px-6 py-4 border-b border-neutral-200">
-                <h2 className="text-base md:text-lg font-semibold text-neutral-900">
+            <div className="bg-white rounded-md border border-neutral-200 overflow-hidden">
+              <div className="px-3 py-2.5 border-b border-neutral-200">
+                <h2 className="text-sm font-semibold text-neutral-900">
                   Liste des participants
                 </h2>
-                <p className="text-xs md:text-sm text-neutral-600 mt-1">
+                <p className="text-[11px] text-neutral-500 mt-0.5">
                   {filteredParticipants.length} participant(s) affiché(s) sur {flattenedParticipants.length}
                 </p>
               </div>
@@ -387,27 +382,27 @@ export default function ParticipantsPage() {
                 <table className="w-full min-w-[900px]">
                   <thead>
                     <tr className="bg-neutral-50 border-b border-neutral-200">
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Type</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Nom</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Email</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Événement</th>
-                      <th className="text-center px-6 py-4 text-sm font-semibold text-neutral-700">Présence</th>
-                      <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">Date</th>
-                      <th className="text-center px-6 py-4 text-sm font-semibold text-neutral-700">Actions</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">Type</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">Nom</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">Email</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">Événement</th>
+                      <th className="text-center px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">Présence</th>
+                      <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">Date</th>
+                      <th className="text-center px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200">
                     {paginatedParticipants.map((participant: GlobalParticipant) => (
                       <tr key={participant.id} className="hover:bg-neutral-50">
-                        <td className="px-6 py-4">
+                        <td className="px-3 py-1.5">
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${participant.type === 'booking' ? 'bg-brand/10 text-brand' : 'bg-purple-100 text-purple-700'
                             }`}>
                             {participant.type === 'booking' ? 'Adhérent' : 'Invité'}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-neutral-900">{participant.firstName} {participant.lastName}</div>
-                          {participant.referredBy && <div className="text-xs text-neutral-500 mt-1">Via: {participant.referredBy}</div>}
+                        <td className="px-3 py-1.5">
+                          <div className="text-sm font-medium text-neutral-900">{participant.firstName} {participant.lastName}</div>
+                          {participant.referredBy && <div className="text-[11px] text-neutral-500">Via: {participant.referredBy}</div>}
                         </td>
                         <td className="px-6 py-4 text-sm text-neutral-600">{participant.email}</td>
                         <td className="px-6 py-4 text-sm text-neutral-900">{participant.eventTitle}</td>
@@ -446,7 +441,7 @@ export default function ParticipantsPage() {
                         <td className="px-6 py-4 text-center">
                           <button
                             onClick={() => handleViewDetails(participant)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors text-sm font-medium"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-brand hover:bg-brand-dark text-white rounded-md transition-colors text-xs font-medium"
                           >
                             <Eye className="w-4 h-4" />
                             Voir
@@ -463,9 +458,9 @@ export default function ParticipantsPage() {
 
         {/* Empty State - No Results */}
         {participantsData && flattenedParticipants.length > 0 && filteredParticipants.length === 0 && !loading && (
-          <div className="bg-white rounded-xl border border-neutral-200 p-12 text-center">
-            <Search className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
+            <Search className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-neutral-900 mb-1.5">
               Aucun résultat
             </h3>
             <p className="text-neutral-600 mb-4">
@@ -473,7 +468,7 @@ export default function ParticipantsPage() {
             </p>
             <button
               onClick={() => setSearchTerm('')}
-              className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark transition-colors"
+              className="px-3 py-1.5 text-xs bg-brand text-white rounded-md hover:bg-brand-dark transition-colors"
             >
               Réinitialiser la recherche
             </button>
@@ -482,9 +477,9 @@ export default function ParticipantsPage() {
 
         {/* Empty State - No Participants */}
         {participantsData && flattenedParticipants.length === 0 && !loading && (
-          <div className="bg-white rounded-xl border border-neutral-200 p-12 text-center">
-            <Users className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
+            <Users className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-neutral-900 mb-1.5">
               Aucun participant
             </h3>
             <p className="text-neutral-600">

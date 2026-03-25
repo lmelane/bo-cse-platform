@@ -14,6 +14,7 @@ import {
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import { ITEMS_PER_PAGE_EVENTS, FRONTEND_URL } from '@/lib/config';
 
 interface EventAttendance {
   totalParticipants: number;
@@ -32,10 +33,7 @@ export default function EventsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
-
-  // URL du site frontend pour voir l'événement
-  const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+  const ITEMS_PER_PAGE = ITEMS_PER_PAGE_EVENTS;
 
   const {
     data,
@@ -213,48 +211,45 @@ export default function EventsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-neutral-900">Événements</h1>
-            <p className="text-sm md:text-base text-neutral-600 mt-1 md:mt-2">
+            <h1 className="text-base font-semibold text-neutral-900">Événements</h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
               {events.length} événement{events.length > 1 ? 's' : ''} au total
             </p>
           </div>
           <button
             onClick={handleCreate}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-dark text-white rounded-md transition-colors font-medium text-xs whitespace-nowrap"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Créer un événement</span>
             <span className="sm:hidden">Créer</span>
           </button>
         </div>
 
         {/* Recherche et filtres */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Barre de recherche */}
+        <div className="bg-white rounded-md border border-neutral-200 p-3">
+          <div className="flex flex-col md:flex-row gap-2.5">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <input
                   type="text"
                   placeholder="Rechercher par titre, slug ou ville..."
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                 />
               </div>
             </div>
-
-            {/* Filtre par événement */}
-            <div className="w-full md:w-80">
+            <div className="w-full md:w-72">
               <select
                 value={filterEventId}
                 onChange={(e) => handleFilterChange(e.target.value)}
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
               >
                 <option value="all">Tous les événements</option>
                 {events.map((event) => (
@@ -269,56 +264,53 @@ export default function EventsPage() {
 
         {/* Statistiques des participants */}
         {!loading && !loadingStats && participants && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Nombre de participants (réservations) */}
-            <div className="bg-white rounded-xl border border-neutral-200 p-6">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-neutral-600">Réservations</p>
-                <Users className="w-5 h-5 text-brand" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-white rounded-md border border-neutral-200 p-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-neutral-500">Réservations</p>
+                <Users className="w-4 h-4 text-brand" />
               </div>
-              <p className="text-3xl font-bold text-neutral-900 mb-1">
+              <p className="text-lg font-semibold text-neutral-900">
                 {participants.stats.totalBookings}
               </p>
-              <p className="text-xs text-neutral-500">
+              <p className="text-[11px] text-neutral-400 mt-0.5">
                 {participants.stats.totalPlaces} places au total
               </p>
             </div>
 
-            {/* Nombre d'invités */}
-            <div className="bg-white rounded-xl border border-neutral-200 p-6">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-neutral-600">Invités</p>
-                <UserCheck className="w-5 h-5 text-purple-600" />
+            <div className="bg-white rounded-md border border-neutral-200 p-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-neutral-500">Invités</p>
+                <UserCheck className="w-4 h-4 text-purple-600" />
               </div>
-              <p className="text-3xl font-bold text-neutral-900 mb-1">
+              <p className="text-lg font-semibold text-neutral-900">
                 {participants.stats.totalGuests}
               </p>
-              <div className="flex gap-3 mt-2 text-xs">
-                <span className="text-green-600 flex items-center gap-1">
+              <div className="flex gap-2 mt-1 text-[11px]">
+                <span className="text-green-600 flex items-center gap-0.5">
                   <CheckCircle className="w-3 h-3" />
                   {participants.stats.guestsValidated}
                 </span>
-                <span className="text-yellow-600 flex items-center gap-1">
+                <span className="text-yellow-600 flex items-center gap-0.5">
                   <Clock className="w-3 h-3" />
                   {participants.stats.guestsPending}
                 </span>
-                <span className="text-red-600 flex items-center gap-1">
+                <span className="text-red-600 flex items-center gap-0.5">
                   <XCircle className="w-3 h-3" />
                   {participants.stats.guestsRefused}
                 </span>
               </div>
             </div>
 
-            {/* Revenu total */}
-            <div className="bg-white rounded-xl border border-neutral-200 p-6">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-neutral-600">Revenu Total</p>
-                <Euro className="w-5 h-5 text-green-600" />
+            <div className="bg-white rounded-md border border-neutral-200 p-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-neutral-500">Revenu Total</p>
+                <Euro className="w-4 h-4 text-green-600" />
               </div>
-              <p className="text-3xl font-bold text-neutral-900 mb-1">
+              <p className="text-lg font-semibold text-neutral-900">
                 {(participants.stats.totalRevenue / 100).toFixed(2)} €
               </p>
-              <p className="text-xs text-neutral-500">
+              <p className="text-[11px] text-neutral-400 mt-0.5">
                 {participants.stats.paidBookings} payées / {participants.stats.unpaidBookings} impayées
               </p>
             </div>
@@ -342,7 +334,7 @@ export default function EventsPage() {
 
         {/* Contenu */}
         {loading ? (
-          <div className="bg-white rounded-xl border border-neutral-200 p-12 text-center">
+          <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
             <Loader2 className="w-12 h-12 text-brand mx-auto mb-4 animate-spin" />
             <p className="text-neutral-600">Chargement des événements...</p>
           </div>
@@ -355,9 +347,9 @@ export default function EventsPage() {
             </div>
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="bg-white rounded-xl border border-neutral-200 p-12 text-center">
-            <Calendar className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
+            <Calendar className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-neutral-900 mb-1.5">
               Aucun événement trouvé
             </h3>
             <p className="text-neutral-600 mb-4">
@@ -401,7 +393,7 @@ export default function EventsPage() {
                     <div className="p-4 space-y-3">
                       {/* Titre */}
                       <div>
-                        <h3 className="font-semibold text-neutral-900 text-lg">{event.title}</h3>
+                        <h3 className="font-semibold text-neutral-900 text-base">{event.title}</h3>
                         {event.subtitle && (
                           <p className="text-sm text-neutral-600 mt-1">{event.subtitle}</p>
                         )}

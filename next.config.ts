@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
-// URL de l'API backend
+// Validate required env vars at build time in production
+if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_API_URL) {
+  throw new Error('NEXT_PUBLIC_API_URL is required in production. Set it in your deployment platform.');
+}
+
+// URL de l'API backend — localhost fallback for local dev only
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const nextConfig: NextConfig = {

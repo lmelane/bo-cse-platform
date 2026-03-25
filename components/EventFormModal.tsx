@@ -273,10 +273,10 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-premium w-full max-w-3xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <h2 className="text-2xl font-bold text-neutral-900">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200">
+          <h2 className="text-base font-semibold text-neutral-900">
             {event ? 'Modifier l\'événement' : 'Créer un événement'}
           </h2>
           <button
@@ -290,7 +290,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="p-6 space-y-6">
+          <div className="p-4 space-y-4">
             {/* Erreurs de validation globales */}
             {Object.keys(validationErrors).length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -309,14 +309,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             )}
 
             {/* Informations principales */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                 Informations principales
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Titre *
                   </label>
                   <input
@@ -325,7 +325,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     value={formData.title}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent ${validationErrors.title ? 'border-red-500' : 'border-neutral-300'}`}
+                    className={`w-full px-3 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand ${validationErrors.title ? 'border-red-500' : 'border-neutral-300'}`}
                     placeholder="Nom de l'événement"
                   />
                   {validationErrors.title && (
@@ -334,7 +334,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Sous-titre
                   </label>
                   <input
@@ -342,13 +342,13 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="subtitle"
                     value={formData.subtitle ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                     placeholder="Description courte"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Slug * (URL de l&apos;événement)
                   </label>
                   <div className="flex gap-2">
@@ -359,13 +359,13 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       onChange={handleSlugChange}
                       required
                       pattern="[a-z0-9-]+"
-                      className="flex-1 px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent font-mono text-sm"
+                      className="flex-1 px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand font-mono text-sm"
                       placeholder="mon-evenement-2024"
                     />
                     <button
                       type="button"
                       onClick={generateSlug}
-                      className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg transition-colors text-sm font-medium"
+                      className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-md transition-colors text-xs font-medium"
                     >
                       Générer
                     </button>
@@ -373,7 +373,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Catégorie *
                   </label>
                   <select
@@ -381,7 +381,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     value={formData.categoryTag ?? ''}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   >
                     <option value="">-- Sélectionnez une catégorie --</option>
                     <option value="afterworks">Afterworks</option>
@@ -395,7 +395,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Type d&apos;événement *
                   </label>
                   <select
@@ -403,7 +403,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     value={formData.eventType ?? 'PHYSICAL'}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   >
                     <option value="PHYSICAL">🏢 Événement physique</option>
                     <option value="WEBINAR">💻 Webinar en ligne</option>
@@ -412,7 +412,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
 
                 {formData.eventType === 'WEBINAR' && (
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Lien du webinar *
                     </label>
                     <input
@@ -421,7 +421,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       value={formData.webinarUrl ?? ''}
                       onChange={handleChange}
                       required={formData.eventType === 'WEBINAR'}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                       placeholder="https://zoom.us/j/123456789"
                     />
                     <p className="text-xs text-neutral-500 mt-1">
@@ -434,14 +434,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 {event && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">
                         Annuler l&apos;événement ?
                       </label>
                       <select
                         name="status"
                         value={formData.status}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                        className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                       >
                         <option value="scheduled">Actif (plannifié)</option>
                         <option value="cancelled">❌ Annulé</option>
@@ -452,14 +452,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">
                         Statut des réservations
                       </label>
                       <select
                         name="ticketStatus"
                         value={formData.ticketStatus ?? 'available'}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                        className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                       >
                         <option value="available">✅ Places disponibles</option>
                         <option value="limited">⚡ Dernières places</option>
@@ -476,14 +476,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 )}
 
                 <div className={event ? 'md:col-span-2' : 'md:col-span-2'}>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Statut de publication
                   </label>
                   <select
                     name="publicationStatus"
                     value={formData.publicationStatus}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   >
                     <option value="online">En ligne (visible)</option>
                     <option value="draft">Brouillon (non visible)</option>
@@ -494,14 +494,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             </div>
 
             {/* Dates et horaires */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                 Dates et horaires
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Date de début
                   </label>
                   <input
@@ -509,12 +509,12 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="startsAt"
                     value={formData.startsAt ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Date de fin
                   </label>
                   <input
@@ -522,7 +522,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="endsAt"
                     value={formData.endsAt ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   />
                 </div>
 
@@ -536,9 +536,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                   Localisation
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Nom du lieu
                     </label>
                     <input
@@ -546,13 +546,13 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       name="venueName"
                       value={formData.venueName ?? ''}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                       placeholder="Station F, Salle Pleyel..."
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Rechercher une adresse
                     </label>
                     <AddressAutocomplete
@@ -577,7 +577,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Adresse
                     </label>
                     <input
@@ -585,14 +585,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       name="addressLine1"
                       value={formData.addressLine1 ?? ''}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-neutral-50"
                       placeholder="Auto-rempli"
                       readOnly
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Code postal
                     </label>
                     <input
@@ -600,14 +600,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       name="postalCode"
                       value={formData.postalCode ?? ''}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-neutral-50"
                       placeholder="Auto-rempli"
                       readOnly
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Ville
                     </label>
                     <input
@@ -615,14 +615,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       name="city"
                       value={formData.city ?? ''}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-neutral-50"
                       placeholder="Auto-rempli"
                       readOnly
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Région
                     </label>
                     <input
@@ -630,14 +630,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       name="region"
                       value={formData.region ?? ''}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-neutral-50"
                       placeholder="Auto-rempli"
                       readOnly
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Pays
                     </label>
                     <input
@@ -645,14 +645,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       name="country"
                       value={formData.country ?? ''}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-neutral-50"
+                      className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-neutral-50"
                       placeholder="Auto-rempli"
                       readOnly
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
                       Adresse complète
                     </label>
                     <input
@@ -660,7 +660,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       name="fullAddress"
                       value={formData.fullAddress ?? ''}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                       placeholder="5 Parvis Alan Turing, 75013 Paris"
                     />
                   </div>
@@ -669,12 +669,12 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             )}
 
             {/* Organisateurs */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900">Organisateurs</h3>
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider">Organisateurs</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Présentateur
                   </label>
                   <input
@@ -682,13 +682,13 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="presenterName"
                     value={formData.presenterName ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                     placeholder="Nom du présentateur"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Organisateur
                   </label>
                   <input
@@ -696,13 +696,13 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="organizerName"
                     value={formData.organizerName ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                     placeholder="Nom de l'organisateur"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Site web de l&apos;organisateur
                   </label>
                   <input
@@ -710,7 +710,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="organizerUrl"
                     value={formData.organizerUrl ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                     placeholder="https://example.com"
                   />
                 </div>
@@ -719,12 +719,12 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             </div>
 
             {/* Tarification */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900">Tarification</h3>
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider">Tarification</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Prix minimum (en €)
                   </label>
                   <input
@@ -734,21 +734,21 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     onChange={(e) => setFormData(prev => ({ ...prev, minPriceCents: parseFloat(e.target.value) * 100 }))}
                     step="0.01"
                     min="0"
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                     placeholder="25.00"
                   />
                   <p className="text-xs text-neutral-500 mt-1">Prix converti automatiquement en centimes</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Devise
                   </label>
                   <select
                     name="currency"
                     value={formData.currency ?? 'EUR'}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   >
                     <option value="EUR">EUR (€)</option>
                     <option value="USD">USD ($)</option>
@@ -757,7 +757,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     URL de réservation externe
                   </label>
                   <input
@@ -765,7 +765,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                     name="externalBookingUrl"
                     value={formData.externalBookingUrl ?? ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                     placeholder="https://billetterie.example.com"
                   />
                   <p className="text-xs text-neutral-500 mt-1">
@@ -779,9 +779,9 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <h3 className="font-semibold text-neutral-900">Gestion des places et quotas</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Nombre maximum de participants
                   </label>
                   <input
@@ -793,7 +793,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       ...prev,
                       maxParticipants: e.target.value ? parseInt(e.target.value) : null
                     }))}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   />
                   <p className="text-xs text-neutral-500 mt-1">
                     Laissez vide pour un événement sans limite de places
@@ -801,7 +801,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Seuil Places limitées
                   </label>
                   <input
@@ -813,7 +813,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                       ...prev,
                       limitedThreshold: e.target.value ? parseInt(e.target.value) : null
                     }))}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   />
                   <p className="text-xs text-neutral-500 mt-1">
                     Affiche Places limitées quand il reste moins de X places
@@ -821,14 +821,14 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">
                     Timezone
                   </label>
                   <select
                     name="timezone"
                     value={formData.timezone ?? 'Europe/Paris'}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   >
                     <option value="Europe/Paris">Europe/Paris (UTC+1)</option>
                     <option value="Europe/London">Europe/London (UTC+0)</option>
@@ -844,8 +844,8 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             </div>
 
             {/* Description */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900">Description de l&apos;événement</h3>
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider">Description de l&apos;événement</h3>
               <div>
                 <RichTextEditor
                   value={formData.descriptionHtml ?? ''}
@@ -856,13 +856,13 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
             </div>
 
             {/* Image */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-neutral-900">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                 Médias
               </h3>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label className="block text-xs font-medium text-neutral-600 mb-1">
                   URL de l&apos;image de couverture
                 </label>
                 <input
@@ -870,7 +870,7 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
                   name="coverImageUrl"
                   value={formData.coverImageUrl ?? ''}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   placeholder="https://example.com/image.jpg"
                 />
                 {formData.coverImageUrl && (
@@ -892,19 +892,19 @@ export default function EventFormModal({ isOpen, onClose, onSubmit, event, isLoa
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-neutral-200 bg-neutral-50">
+          <div className="flex items-center justify-end gap-2.5 px-4 py-3 border-t border-neutral-200 bg-neutral-50">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-6 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors disabled:opacity-50"
+              className="px-4 py-1.5 text-sm border border-neutral-200 text-neutral-700 rounded-md hover:bg-neutral-100 transition-colors disabled:opacity-50"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-1.5 text-sm bg-brand hover:bg-brand-dark text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               {isLoading ? (
                 <>

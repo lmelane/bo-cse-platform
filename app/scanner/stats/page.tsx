@@ -5,6 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { Camera, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { scannerApi } from '@/lib/api';
+import { SCANNER_REFETCH_INTERVAL } from '@/lib/config';
 
 type ScanStats = Awaited<ReturnType<typeof scannerApi.getStats>>;
 
@@ -12,25 +13,25 @@ export default function ScannerStatsPage() {
   const { data: stats, isLoading: loading, error: queryError } = useQuery<ScanStats>({
     queryKey: ['scanner-stats'],
     queryFn: () => scannerApi.getStats(),
-    refetchInterval: 30000,
+    refetchInterval: SCANNER_REFETCH_INTERVAL,
   });
 
   const error = queryError ? (queryError instanceof Error ? queryError.message : 'Erreur lors du chargement des statistiques') : null;
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900">Statistiques Scanner</h1>
-            <p className="text-sm text-neutral-500 mt-1">Analyse des scans QR en temps réel</p>
+            <h1 className="text-base font-semibold text-neutral-900">Statistiques Scanner</h1>
+            <p className="text-xs text-neutral-500 mt-0.5">Analyse des scans QR en temps réel</p>
           </div>
           <Link
             href="/scanner"
-            className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark transition-colors flex items-center gap-2"
+            className="px-3 py-1.5 text-xs bg-brand text-white rounded-md hover:bg-brand-dark transition-colors flex items-center gap-1.5 font-medium"
           >
-            <Camera className="w-4 h-4" />
+            <Camera className="w-3.5 h-3.5" />
             Scanner
           </Link>
         </div>
@@ -52,61 +53,61 @@ export default function ScannerStatsPage() {
             {/* KPIs Principaux */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Total Scans */}
-              <div className="bg-white rounded-xl border border-neutral-200 p-6 hover:border-brand transition-colors">
-                <div className="flex items-center gap-3 mb-3">
+              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-brand transition-colors">
+                <div className="flex items-center gap-2 mb-1">
                   <div className="p-2 bg-brand-50 rounded-lg">
                     <Camera className="w-5 h-5 text-brand" />
                   </div>
                   <p className="text-sm text-neutral-600">Total Scans</p>
                 </div>
-                <p className="text-3xl font-bold text-neutral-900">{stats.totalScans}</p>
+                <p className="text-lg font-semibold text-neutral-900">{stats.totalScans}</p>
                 <p className="text-xs text-neutral-500 mt-2">Aujourd&apos;hui: {stats.todayScans}</p>
               </div>
 
               {/* Scans Réussis */}
-              <div className="bg-white rounded-xl border border-neutral-200 p-6 hover:border-green-300 transition-colors">
-                <div className="flex items-center gap-3 mb-3">
+              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-green-300 transition-colors">
+                <div className="flex items-center gap-2 mb-1">
                   <div className="p-2 bg-green-50 rounded-lg">
                     <CheckCircle className="w-5 h-5 text-green-600" />
                   </div>
                   <p className="text-sm text-neutral-600">Réussis</p>
                 </div>
-                <p className="text-3xl font-bold text-green-600">{stats.successfulScans}</p>
+                <p className="text-lg font-semibold text-green-600">{stats.successfulScans}</p>
                 <p className="text-xs text-neutral-500 mt-2">
                   {stats.totalScans > 0 ? ((stats.successfulScans / stats.totalScans) * 100).toFixed(1) : 0}% du total
                 </p>
               </div>
 
               {/* Échecs */}
-              <div className="bg-white rounded-xl border border-neutral-200 p-6 hover:border-red-300 transition-colors">
-                <div className="flex items-center gap-3 mb-3">
+              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-red-300 transition-colors">
+                <div className="flex items-center gap-2 mb-1">
                   <div className="p-2 bg-red-50 rounded-lg">
                     <XCircle className="w-5 h-5 text-red-600" />
                   </div>
                   <p className="text-sm text-neutral-600">Échecs</p>
                 </div>
-                <p className="text-3xl font-bold text-red-600">{stats.failedScans}</p>
+                <p className="text-lg font-semibold text-red-600">{stats.failedScans}</p>
                 <p className="text-xs text-neutral-500 mt-2">
                   {stats.duplicateScans} doublons
                 </p>
               </div>
 
               {/* Taux de Présence */}
-              <div className="bg-white rounded-xl border border-neutral-200 p-6 hover:border-blue-300 transition-colors">
-                <div className="flex items-center gap-3 mb-3">
+              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-blue-300 transition-colors">
+                <div className="flex items-center gap-2 mb-1">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <TrendingUp className="w-5 h-5 text-blue-600" />
                   </div>
                   <p className="text-sm text-neutral-600">Présence</p>
                 </div>
-                <p className="text-3xl font-bold text-blue-600">{stats.attendanceRate.toFixed(1)}%</p>
+                <p className="text-lg font-semibold text-blue-600">{stats.attendanceRate.toFixed(1)}%</p>
                 <p className="text-xs text-neutral-500 mt-2">Taux moyen</p>
               </div>
             </div>
 
             {/* Scans par Heure */}
-            <div className="bg-white rounded-xl border border-neutral-200 p-6">
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Scans par heure</h2>
+            <div className="bg-white rounded-md border border-neutral-200 p-3">
+              <h2 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2.5">Scans par heure</h2>
               <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
                 {stats.scansPerHour.map((item) => (
                   <div key={item.hour} className="text-center">
@@ -129,8 +130,8 @@ export default function ScannerStatsPage() {
             </div>
 
             {/* Top Événements */}
-            <div className="bg-white rounded-xl border border-neutral-200 p-6">
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Top Événements</h2>
+            <div className="bg-white rounded-md border border-neutral-200 p-3">
+              <h2 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2.5">Top Événements</h2>
               <div className="space-y-3">
                 {stats.topEvents.map((event, idx) => (
                   <div key={idx} className="flex items-center gap-4 p-3 bg-neutral-50 rounded-lg">
@@ -155,8 +156,8 @@ export default function ScannerStatsPage() {
             </div>
 
             {/* Derniers Scans */}
-            <div className="bg-white rounded-xl border border-neutral-200 p-6">
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Derniers scans</h2>
+            <div className="bg-white rounded-md border border-neutral-200 p-3">
+              <h2 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2.5">Derniers scans</h2>
               <div className="space-y-2">
                 {stats.recentScans.map((scan) => (
                   <div

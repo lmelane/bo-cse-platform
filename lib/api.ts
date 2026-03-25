@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { API_TIMEOUT, DEFAULT_TIMEZONE, DEFAULT_CURRENCY, API_DEFAULT_LIMIT } from './config';
 
 // Instance axios configurée
 // Les appels /api/* sont proxiés par Next.js rewrites vers cse-plateform.
@@ -8,7 +9,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: API_TIMEOUT,
 });
 
 // Intercepteur de réponse pour gérer les erreurs
@@ -363,7 +364,7 @@ const eventToApiFormat = (data: Partial<Event>) => ({
   // Dates et horaires
   starts_at: data.startsAt,
   ends_at: data.endsAt,
-  timezone: data.timezone || 'Europe/Paris',
+  timezone: data.timezone || DEFAULT_TIMEZONE,
 
   // Localisation
   venue_name: data.venueName,
@@ -378,7 +379,7 @@ const eventToApiFormat = (data: Partial<Event>) => ({
 
   // Tarification
   min_price_cents: data.minPriceCents,
-  currency: data.currency || 'EUR',
+  currency: data.currency || DEFAULT_CURRENCY,
   ticket_status: data.ticketStatus,
   external_booking_url: data.externalBookingUrl,
 
@@ -460,7 +461,7 @@ export const participantsApi = {
     if (params?.isPaid !== undefined) queryParams.append('isPaid', params.isPaid.toString());
 
     // Limite par défaut pour éviter de charger trop de données
-    const limit = params?.limit ?? 1000; // Max 1000 par défaut
+    const limit = params?.limit ?? API_DEFAULT_LIMIT;
     const offset = params?.offset ?? 0;
 
     queryParams.append('limit', limit.toString());

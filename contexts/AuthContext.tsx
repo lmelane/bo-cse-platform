@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { authService, type AuthUser } from '@/lib/auth';
+import { SESSION_CHECK_INTERVAL } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -59,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.error('Votre session a expiré. Veuillez vous reconnecter.');
         logout();
       }
-    }, 5 * 60 * 1000);
+    }, SESSION_CHECK_INTERVAL);
 
     return () => clearInterval(interval);
   }, [user, logout]);

@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
 
         {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-60 bg-white border-b border-neutral-200 px-3 py-2.5 flex items-center justify-between shadow-sm">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-200/50 px-3 py-2.5 flex items-center justify-between shadow-xs">
           <div>
             <h1 className="text-base font-bold text-brand">Admin CSE</h1>
           </div>
@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="p-3 bg-brand text-white rounded-xl hover:bg-brand-dark transition-colors shadow-md active:scale-95"
               title="Scanner"
             >
-              <Camera className="w-6 h-6" />
+              <Camera className="w-5 h-5" />
             </Link>
 
             <button
@@ -38,9 +38,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="p-2.5 hover:bg-neutral-100 rounded-xl transition-colors active:scale-95"
             >
               {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-neutral-700" />
+                <X className="w-5 h-5 text-neutral-700" />
               ) : (
-                <Menu className="w-6 h-6 text-neutral-700" />
+                <Menu className="w-5 h-5 text-neutral-700" />
               )}
             </button>
           </div>
@@ -48,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Main Content */}
         <main className="flex-1 lg:ml-56 pt-16 lg:pt-0">
-          <div className="p-3 md:p-4 lg:p-6 max-w-full">
+          <div className="p-3 md:p-4 lg:p-5 max-w-full">
             {children}
           </div>
         </main>

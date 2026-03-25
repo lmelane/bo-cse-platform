@@ -8,6 +8,7 @@ import { User as UserIcon, Shield, ShieldOff, Loader2, Euro, TrendingUp, MoreVer
 import { exportToCSV } from '@/lib/csv-utils';
 import toast from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
+import { ITEMS_PER_PAGE_USERS, SEARCH_DEBOUNCE_MS } from '@/lib/config';
 import Pagination from '@/components/Pagination';
 import UserDetailsModal from '@/components/UserDetailsModal';
 
@@ -30,13 +31,13 @@ export default function UsersPage() {
 
   // Filtres et recherche
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 300); // Debounce de 300ms
+  const [debouncedSearchTerm] = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
   const [filterType, setFilterType] = useState<'all' | 'event_based' | 'unlimited'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED'>('all');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 50;
+  const ITEMS_PER_PAGE = ITEMS_PER_PAGE_USERS;
 
   // Changer le rôle d'un utilisateur
   const handleRoleChange = async (userId: string, currentRole: 'user' | 'admin') => {
@@ -186,21 +187,21 @@ export default function UsersPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-neutral-900">Utilisateurs</h1>
-            <p className="text-sm md:text-base text-neutral-600 mt-1 md:mt-2">
+            <h1 className="text-base font-semibold text-neutral-900">Utilisateurs</h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
               {!loading && `${filteredUsers.length} utilisateur${filteredUsers.length > 1 ? 's' : ''} affiché${filteredUsers.length > 1 ? 's' : ''} sur ${users.length}`}
             </p>
           </div>
           {!loading && users.length > 0 && (
             <button
               onClick={handleExportUsers}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-dark text-white rounded-md transition-colors font-medium text-xs whitespace-nowrap"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Exporter les utilisateurs</span>
               <span className="sm:hidden">Exporter</span>
             </button>
@@ -209,28 +210,28 @@ export default function UsersPage() {
 
         {/* Recherche et filtres */}
         {!loading && !error && (
-          <div className="bg-white rounded-xl border border-neutral-200 p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+          <div className="bg-white rounded-md border border-neutral-200 p-3">
+            <div className="flex flex-col md:flex-row gap-2.5">
               {/* Barre de recherche */}
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                   <input
                     type="text"
                     placeholder="Rechercher par nom, prénom ou email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   />
                 </div>
               </div>
 
               {/* Filtre type d'abonnement */}
-              <div className="w-full md:w-64">
+              <div className="w-full md:w-52">
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                 >
                   <option value="all">Tous les types</option>
                   <option value="event_based">Adhésion Événementielle</option>
@@ -239,11 +240,11 @@ export default function UsersPage() {
               </div>
 
               {/* Filtre statut d'abonnement */}
-              <div className="w-full md:w-64">
+              <div className="w-full md:w-48">
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                 >
                   <option value="all">Tous les statuts</option>
                   <option value="ACTIVE">Actif</option>
@@ -257,43 +258,43 @@ export default function UsersPage() {
 
         {/* Statistiques d'abonnements */}
         {!loading && !error && users.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Chiffre d'affaires total */}
-            <div className="bg-white rounded-xl border border-neutral-200 p-6">
+            <div className="bg-white rounded-md border border-neutral-200 p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-neutral-600 mb-1">
+                  <p className="text-xs font-medium text-neutral-500 mb-0.5">
                     Chiffre d&apos;affaires total
                   </p>
-                  <p className="text-3xl font-bold text-neutral-900">
+                  <p className="text-lg font-semibold text-neutral-900">
                     {(subscriptionStats.totalRevenue / 100).toFixed(2)} €
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <Euro className="w-6 h-6 text-green-600" />
+                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
+                  <Euro className="w-3.5 h-3.5 text-green-600" />
                 </div>
               </div>
-              <p className="text-xs text-neutral-500 mt-3">
+              <p className="text-[11px] text-neutral-400 mt-1.5">
                 Somme de tous les abonnements
               </p>
             </div>
 
             {/* Abonnements actifs */}
-            <div className="bg-white rounded-xl border border-neutral-200 p-6">
+            <div className="bg-white rounded-md border border-neutral-200 p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-neutral-600 mb-1">
+                  <p className="text-xs font-medium text-neutral-500 mb-0.5">
                     Abonnements actifs
                   </p>
-                  <p className="text-3xl font-bold text-neutral-900">
+                  <p className="text-lg font-semibold text-neutral-900">
                     {subscriptionStats.activeSubscriptions}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-brand/10 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-brand" />
+                <div className="w-8 h-8 rounded-full bg-brand/5 flex items-center justify-center">
+                  <TrendingUp className="w-3.5 h-3.5 text-brand" />
                 </div>
               </div>
-              <p className="text-xs text-neutral-500 mt-3">
+              <p className="text-[11px] text-neutral-400 mt-1.5">
                 Utilisateurs avec abonnement actif
               </p>
             </div>
@@ -316,33 +317,33 @@ export default function UsersPage() {
 
         {/* Users Table */}
         {!loading && !error && filteredUsers.length > 0 && (
-          <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+          <div className="bg-white rounded-md border border-neutral-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-neutral-50 border-b border-neutral-200">
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
+                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                       Utilisateur
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
+                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                       Association
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
+                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                       Rôle
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
+                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                       Type abonnement
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
+                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                       Statut abonnement
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
+                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                       Onboarding
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
+                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                       Date de création
                     </th>
-                    <th className="text-left px-6 py-4 text-sm font-semibold text-neutral-700">
+                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                       Actions
                     </th>
                   </tr>
@@ -351,33 +352,33 @@ export default function UsersPage() {
                   {paginatedUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-neutral-50 transition-colors">
                       {/* Utilisateur */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
-                            <UserIcon className="w-5 h-5 text-brand" />
+                      <td className="px-3 py-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-brand/5 flex items-center justify-center flex-shrink-0">
+                            <UserIcon className="w-3.5 h-3.5 text-brand" />
                           </div>
-                          <div>
-                            <div className="font-medium text-neutral-900">
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-neutral-900 truncate">
                               {user.firstName && user.lastName
                                 ? `${user.firstName} ${user.lastName}`
                                 : 'Non renseigné'}
                             </div>
-                            <div className="text-sm text-neutral-500">{user.email}</div>
+                            <div className="text-xs text-neutral-500 truncate">{user.email}</div>
                           </div>
                         </div>
                       </td>
 
                       {/* Association */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-1.5">
                         <span className="text-neutral-700">
                           {user.association || 'Non renseignée'}
                         </span>
                       </td>
 
                       {/* Rôle */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-1.5">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${user.role.toLowerCase() === 'admin'
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium ${user.role.toLowerCase() === 'admin'
                             ? 'bg-brand/10 text-brand'
                             : 'bg-neutral-100 text-neutral-700'
                             }`}
@@ -392,17 +393,17 @@ export default function UsersPage() {
                       </td>
 
                       {/* Type abonnement */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-1.5">
                         <span className="text-sm text-neutral-700">
                           {formatSubscriptionType(user.subscriptionType)}
                         </span>
                       </td>
 
                       {/* Statut abonnement */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-1.5">
                         {user.subscriptionStatus ? (
                           <span
-                            className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${formatSubscriptionStatus(user.subscriptionStatus)?.className
+                            className={`inline-flex px-2 py-0.5 rounded text-[11px] font-medium ${formatSubscriptionStatus(user.subscriptionStatus)?.className
                               }`}
                           >
                             {formatSubscriptionStatus(user.subscriptionStatus)?.label}
@@ -413,9 +414,9 @@ export default function UsersPage() {
                       </td>
 
                       {/* Onboarding */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-1.5">
                         <span
-                          className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${user.onboardingCompleted
+                          className={`inline-flex px-2 py-0.5 rounded text-[11px] font-medium ${user.onboardingCompleted
                             ? 'bg-green-100 text-green-700'
                             : 'bg-yellow-100 text-yellow-700'
                             }`}
@@ -425,12 +426,12 @@ export default function UsersPage() {
                       </td>
 
                       {/* Date de création */}
-                      <td className="px-6 py-4 text-sm text-neutral-600">
+                      <td className="px-3 py-2.5 text-sm text-neutral-600">
                         {formatDate(user.createdAt)}
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-1.5">
                         <div className="relative">
                           <button
                             onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
@@ -515,9 +516,9 @@ export default function UsersPage() {
 
         {/* Empty State - Aucun résultat */}
         {!loading && !error && users.length > 0 && filteredUsers.length === 0 && (
-          <div className="bg-white rounded-xl border border-neutral-200 p-12 text-center">
-            <Filter className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
+            <Filter className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-neutral-900 mb-1.5">
               Aucun résultat
             </h3>
             <p className="text-neutral-600 mb-4">
@@ -529,7 +530,7 @@ export default function UsersPage() {
                 setFilterType('all');
                 setFilterStatus('all');
               }}
-              className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark transition-colors"
+              className="px-3 py-1.5 text-xs bg-brand text-white rounded-md hover:bg-brand-dark transition-colors"
             >
               Réinitialiser les filtres
             </button>
@@ -538,9 +539,9 @@ export default function UsersPage() {
 
         {/* Empty State - Aucun utilisateur */}
         {!loading && !error && users.length === 0 && (
-          <div className="bg-white rounded-xl border border-neutral-200 p-12 text-center">
-            <UserIcon className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
+            <UserIcon className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-neutral-900 mb-1.5">
               Aucun utilisateur
             </h3>
             <p className="text-neutral-600">
