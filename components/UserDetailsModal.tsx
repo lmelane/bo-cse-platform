@@ -1,23 +1,74 @@
 'use client';
 
-import React from 'react';
-import { X, User, Mail, Briefcase, Calendar, DollarSign, Shield, Link as LinkIcon, Award, Tag } from 'lucide-react';
-import { User as UserType } from '@/lib/api';
+import React, { useState } from 'react';
+import { X, User, Mail, Briefcase, Calendar, DollarSign, Shield, Link as LinkIcon, Award, Tag, Plus, Loader2 } from 'lucide-react';
+import { User as UserType, usersApi } from '@/lib/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 interface UserDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     user: UserType | null;
+    onUserUpdated?: (updatedUser: UserType) => void;
 }
 
 export default function UserDetailsModal({
     isOpen,
     onClose,
     user,
+    onUserUpdated,
 }: UserDetailsModalProps) {
+    const queryClient = useQueryClient();
+    const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
+    const [subscriptionType, setSubscriptionType] = useState<'event_based' | 'unlimited'>('event_based');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     if (!isOpen || !user) return null;
+
+    const resetForm = () => {
+        setShowSubscriptionForm(false);
+        setSubscriptionType('event_based');
+        setStartDate('');
+        setEndDate('');
+    };
+
+    const handleCreateSubscription = async () => {
+        if (!startDate || !endDate) {
+            toast.error('Veuillez renseigner les dates de debut et de fin');
+            return;
+        }
+
+        if (new Date(endDate) <= new Date(startDate)) {
+            toast.error('La date de fin doit etre posterieure a la date de debut');
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            const result = await usersApi.createSubscription(user.id, {
+                subscription_type: subscriptionType,
+                start_date: new Date(startDate).toISOString(),
+                end_date: new Date(endDate).toISOString(),
+            });
+            toast.success(result.message || 'Abonnement cree avec succes');
+            resetForm();
+            // Rafraichir les donnees
+            await queryClient.invalidateQueries({ queryKey: ['users'] });
+            if (onUserUpdated && result.data) {
+                onUserUpdated(result.data as UserType);
+            }
+        } catch (err) {
+            const error = err as { response?: { data?: { message?: string } } };
+            toast.error(error.response?.data?.message || 'Erreur lors de la creation de l\'abonnement');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return '-';
@@ -246,6 +297,99 @@ export default function UserDetailsModal({
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* Creer un abonnement manuellement */}
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
+                                <Plus className="w-3.5 h-3.5 text-brand" />
+                                Creer un abonnement
+                            </h3>
+                            {!showSubscriptionForm && (
+                                <button
+                                    onClick={() => setShowSubscriptionForm(true)}
+                                    className="text-xs text-brand hover:text-brand-dark font-medium transition-colors"
+                                >
+                                    Creer manuellement
+                                </button>
+                            )}
+                        </div>
+
+                        {showSubscriptionForm && (
+                            <div className="bg-neutral-50 rounded-md p-3 space-y-3 border border-brand/20">
+                                {/* Type d'abonnement */}
+                                <div>
+                                    <label htmlFor="sub-type" className="text-[11px] text-neutral-500 block mb-1">
+                                        Type d&apos;abonnement
+                                    </label>
+                                    <select
+                                        id="sub-type"
+                                        value={subscriptionType}
+                                        onChange={(e) => setSubscriptionType(e.target.value as 'event_based' | 'unlimited')}
+                                        className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
+                                    >
+                                        <option value="event_based">Adhesion Evenementielle</option>
+                                        <option value="unlimited">Adhesion Illimitee</option>
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {/* Date de debut */}
+                                    <div>
+                                        <label htmlFor="sub-start" className="text-[11px] text-neutral-500 block mb-1">
+                                            Date de debut
+                                        </label>
+                                        <input
+                                            id="sub-start"
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                            className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
+                                        />
+                                    </div>
+
+                                    {/* Date de fin */}
+                                    <div>
+                                        <label htmlFor="sub-end" className="text-[11px] text-neutral-500 block mb-1">
+                                            Date de fin
+                                        </label>
+                                        <input
+                                            id="sub-end"
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                            className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center justify-end gap-2 pt-1">
+                                    <button
+                                        onClick={resetForm}
+                                        disabled={isSubmitting}
+                                        className="px-3 py-1.5 text-xs text-neutral-600 bg-neutral-100 rounded-md hover:bg-neutral-200 transition-colors font-medium disabled:opacity-50"
+                                    >
+                                        Annuler
+                                    </button>
+                                    <button
+                                        onClick={handleCreateSubscription}
+                                        disabled={isSubmitting || !startDate || !endDate}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-brand text-white rounded-md hover:bg-brand-dark transition-colors font-medium disabled:opacity-50"
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                Creation...
+                                            </>
+                                        ) : (
+                                            'Creer l\'abonnement'
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Dates système */}

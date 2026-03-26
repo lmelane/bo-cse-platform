@@ -340,6 +340,18 @@ export const usersApi = {
     const response = await api.patch<{ success: boolean; data: User }>(`/api/mgnt-sys-cse/users/${id}/role`, { role });
     return response.data;
   },
+
+  createSubscription: async (id: string, data: {
+    subscription_type: 'event_based' | 'unlimited';
+    start_date: string;
+    end_date: string;
+  }) => {
+    const response = await api.post<{ success: boolean; message: string; data: User }>(
+      `/api/mgnt-sys-cse/users/${id}/subscription`,
+      data
+    );
+    return response.data;
+  },
 };
 
 // Helper: Convertir Event (camelCase) vers format API (snake_case)
