@@ -336,11 +336,6 @@ export const usersApi = {
     return response.data;
   },
 
-  updateRole: async (id: string, role: 'user' | 'admin') => {
-    const response = await api.patch<{ success: boolean; data: User }>(`/api/mgnt-sys-cse/users/${id}/role`, { role });
-    return response.data;
-  },
-
   createSubscription: async (id: string, data: {
     subscription_type: 'event_based' | 'unlimited';
     start_date: string;
@@ -350,6 +345,11 @@ export const usersApi = {
       `/api/mgnt-sys-cse/users/${id}/subscription`,
       data
     );
+    return response.data;
+  },
+
+  inviteAdmin: async (email: string) => {
+    const response = await api.post<{ success: boolean; message: string }>('/api/mgnt-sys-cse/admins/invite', { email });
     return response.data;
   },
 };

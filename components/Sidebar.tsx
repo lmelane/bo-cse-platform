@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, Calendar, LayoutDashboard, LogOut, User as UserIcon, UserCheck, QrCode } from 'lucide-react';
+import { Users, Calendar, LayoutDashboard, LogOut, User as UserIcon, UserCheck, QrCode, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -41,7 +41,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, isSuperAdmin } = useAuth();
 
   const handleLogout = async () => {
     if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
@@ -107,6 +107,26 @@ export default function Sidebar({ isMobileMenuOpen = false, onCloseMobileMenu }:
             );
           })}
         </ul>
+
+        {/* SuperAdmin only — invite admin */}
+        {isSuperAdmin && (
+          <>
+            <div className="border-t border-neutral-100 my-2 mx-1" />
+            <Link
+              href="/admins/invite"
+              onClick={onCloseMobileMenu}
+              className={cn(
+                'flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-colors duration-150',
+                pathname === '/admins/invite'
+                  ? 'bg-brand-50 text-brand font-semibold'
+                  : 'text-neutral-600 hover:bg-neutral-50'
+              )}
+            >
+              <UserPlus className={cn("w-4 h-4", pathname === '/admins/invite' ? "text-brand" : "text-neutral-400")} />
+              <span className="text-sm font-medium">Inviter un admin</span>
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* Footer avec utilisateur */}
@@ -121,7 +141,7 @@ export default function Sidebar({ isMobileMenuOpen = false, onCloseMobileMenu }:
             </div>
             <p className="text-[10px] text-neutral-500 truncate">{user.email}</p>
             <span className="inline-block mt-1.5 px-1.5 py-0.5 bg-brand-50 text-brand text-[10px] font-medium rounded">
-              Admin
+              {user.role?.toLowerCase() === 'superadmin' ? 'Super Admin' : 'Admin'}
             </span>
           </div>
         )}

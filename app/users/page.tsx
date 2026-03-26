@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { usersApi, type User } from '@/lib/api';
-import { User as UserIcon, Shield, ShieldOff, Loader2, Euro, TrendingUp, MoreVertical, Search, Filter, Download } from 'lucide-react';
+import { User as UserIcon, Shield, Loader2, Euro, TrendingUp, MoreVertical, Search, Filter, Download } from 'lucide-react';
 import { exportToCSV } from '@/lib/csv-utils';
 import toast from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
@@ -13,7 +13,6 @@ import Pagination from '@/components/Pagination';
 import UserDetailsModal from '@/components/UserDetailsModal';
 
 export default function UsersPage() {
-  const queryClient = useQueryClient();
   const { data: users = [], isLoading: loading, error: queryError } = useQuery<User[]>({
     queryKey: ['users'],
     queryFn: async () => {
@@ -24,7 +23,6 @@ export default function UsersPage() {
 
   const error = queryError ? (queryError as { response?: { data?: { message?: string } } }).response?.data?.message || 'Erreur lors du chargement des utilisateurs' : null;
 
-  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -38,28 +36,6 @@ export default function UsersPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = ITEMS_PER_PAGE_USERS;
-
-  // Changer le rôle d'un utilisateur
-  const handleRoleChange = async (userId: string, currentRole: 'user' | 'admin') => {
-    const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    const confirmMessage = `Êtes-vous sûr de vouloir changer le rôle en "${newRole}" ?`;
-
-    if (!confirm(confirmMessage)) return;
-
-    try {
-      setUpdatingUserId(userId);
-      await usersApi.updateRole(userId, newRole);
-      toast.success(`Rôle mis à jour avec succès : ${newRole}`);
-      // Recharger la liste
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
-    } catch (err) {
-      const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour du rôle');
-      console.error('Error updating role:', err);
-    } finally {
-      setUpdatingUserId(null);
-    }
-  };
 
   // Exporter les utilisateurs en CSV (sécurisé contre XSS)
   const handleExportUsers = () => {
@@ -436,13 +412,8 @@ export default function UsersPage() {
                           <button
                             onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
                             className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
-                            disabled={updatingUserId === user.id}
                           >
-                            {updatingUserId === user.id ? (
-                              <Loader2 className="w-5 h-5 animate-spin text-neutral-600" />
-                            ) : (
-                              <MoreVertical className="w-5 h-5 text-neutral-600" />
-                            )}
+                            <MoreVertical className="w-5 h-5 text-neutral-600" />
                           </button>
 
                           {/* Menu déroulant */}
@@ -456,25 +427,6 @@ export default function UsersPage() {
 
                               {/* Menu */}
                               <div className="absolute right-0 top-10 z-[100] w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1">
-                                <button
-                                  onClick={() => {
-                                    setOpenMenuId(null);
-                                    handleRoleChange(user.id, user.role);
-                                  }}
-                                  className="w-full text-left px-4 py-2 hover:bg-neutral-50 transition-colors flex items-center gap-3"
-                                >
-                                  {user.role.toLowerCase() === 'admin' ? (
-                                    <>
-                                      <ShieldOff className="w-4 h-4 text-neutral-600" />
-                                      <span className="text-sm text-neutral-700">Retirer admin</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Shield className="w-4 h-4 text-brand" />
-                                      <span className="text-sm text-neutral-700">Promouvoir admin</span>
-                                    </>
-                                  )}
-                                </button>
                                 <button
                                   onClick={async () => {
                                     setOpenMenuId(null);

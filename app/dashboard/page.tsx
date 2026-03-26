@@ -4,28 +4,93 @@ import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { dashboardApi } from '@/lib/api';
 import { DASHBOARD_STALE_TIME, SUBSCRIPTION_PRICES } from '@/lib/config';
-import { Loader2 } from 'lucide-react';
+import {
+  Loader2,
+  TrendingUp,
+  DollarSign,
+  UserCheck,
+  Repeat,
+  CalendarDays,
+  ArrowUpRight,
+  Clock,
+  XCircle,
+  Globe,
+} from 'lucide-react';
 
 type DashboardStats = Awaited<ReturnType<typeof dashboardApi.getStats>>;
 
+function StatCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <div className="flex items-start gap-3 bg-white rounded-lg border border-neutral-200 p-4">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-neutral-50 border border-neutral-100">
+        <Icon className="w-4 h-4 text-neutral-400" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs text-neutral-500 leading-none">{label}</p>
+        <p className="text-lg font-semibold text-neutral-900 mt-1 leading-none">{value}</p>
+        {sub && <p className="text-[11px] text-neutral-400 mt-1.5 leading-tight">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function InlineRow({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-neutral-100 last:border-b-0">
+      <span className="text-xs text-neutral-500">{label}</span>
+      <div className="text-right">
+        <span className="text-sm font-medium text-neutral-900">{value}</span>
+        {sub && <span className="text-[11px] text-neutral-400 ml-1.5">{sub}</span>}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const { data: stats, isLoading: loading, error: queryError } = useQuery<DashboardStats>({
+  const {
+    data: stats,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery<DashboardStats>({
     queryKey: ['dashboard-stats'],
     queryFn: () => dashboardApi.getStats(),
     staleTime: DASHBOARD_STALE_TIME,
   });
 
-  const error = queryError
-    ? 'Erreur lors du chargement des données'
-    : null;
+  const error = queryError ? 'Erreur lors du chargement des données' : null;
 
-  const formatCurrency = (cents: number) => `${(cents / 100).toFixed(2)} \u20AC`;
+  const fmt = (cents: number) => {
+    const euros = cents / 100;
+    return euros >= 1000
+      ? `${(euros / 1000).toFixed(1).replace(/\.0$/, '')}k \u20AC`
+      : `${euros.toFixed(0)} \u20AC`;
+  };
+
+  const fmtFull = (cents: number) => `${(cents / 100).toFixed(2)} \u20AC`;
 
   return (
     <AdminLayout>
-      <div className="space-y-4">
+      <div className="max-w-5xl">
         {/* Header */}
-        <div className="mb-2">
+        <div className="mb-5">
           <h1 className="text-base font-semibold text-neutral-900">Dashboard</h1>
           <p className="text-xs text-neutral-500 mt-0.5">
             Vue d&apos;ensemble de votre activit&eacute;
@@ -33,155 +98,156 @@ export default function DashboardPage() {
         </div>
 
         {loading && (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="w-6 h-6 animate-spin text-brand" />
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-5 h-5 animate-spin text-neutral-400" />
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-sm">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-xs">
             {error}
           </div>
         )}
 
         {stats && (
           <>
-            {/* KPIs Principaux */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-brand/40 transition-colors">
-                <p className="text-xs text-neutral-500 mb-0.5">ARR</p>
-                <p className="text-lg font-semibold text-neutral-900">{formatCurrency(stats.financial.arr)}</p>
-                <p className="text-[11px] text-neutral-400 mt-1">Revenue annuel r&eacute;current</p>
-              </div>
-
-              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-brand/40 transition-colors">
-                <p className="text-xs text-neutral-500 mb-0.5">MRR</p>
-                <p className="text-lg font-semibold text-neutral-900">{formatCurrency(stats.financial.mrr)}</p>
-                <p className="text-[11px] text-neutral-400 mt-1">Revenue mensuel r&eacute;current</p>
-              </div>
-
-              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-brand/40 transition-colors">
-                <p className="text-xs text-neutral-500 mb-0.5">Abonn&eacute;s</p>
-                <p className="text-lg font-semibold text-neutral-900">{stats.financial.activeSubscriptions}</p>
-                <p className="text-[11px] text-neutral-500 mt-1">sur {stats.totalUsers} total</p>
-              </div>
-
-              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-brand/40 transition-colors">
-                <p className="text-xs text-neutral-500 mb-0.5">Churn</p>
-                <p className="text-lg font-semibold text-neutral-900">{stats.financial.churnRate.toFixed(1)}%</p>
-                <p className="text-[11px] text-neutral-400 mt-1">{stats.financial.expiredSubscriptions} expir&eacute;s</p>
-              </div>
+            {/* Revenue KPIs */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <StatCard
+                icon={TrendingUp}
+                label="ARR"
+                value={fmt(stats.financial.arr)}
+                sub="Revenu annuel r&eacute;current"
+              />
+              <StatCard
+                icon={DollarSign}
+                label="MRR"
+                value={fmt(stats.financial.mrr)}
+              />
+              <StatCard
+                icon={UserCheck}
+                label="Abonn&eacute;s actifs"
+                value={stats.financial.activeSubscriptions}
+                sub={`sur ${stats.totalUsers} utilisateurs`}
+              />
+              <StatCard
+                icon={Repeat}
+                label="Churn"
+                value={`${stats.financial.churnRate.toFixed(1)}%`}
+                sub={`${stats.financial.expiredSubscriptions} expir&eacute;s`}
+              />
             </div>
 
-            {/* Métriques Secondaires */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-brand/40 transition-colors">
-                <p className="text-xs text-neutral-500 mb-0.5">ARPU</p>
-                <p className="text-base font-semibold text-neutral-900">{formatCurrency(stats.financial.arpu)}</p>
-                <p className="text-[11px] text-neutral-400 mt-1">Revenue moyen par utilisateur</p>
-              </div>
-
-              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-brand/40 transition-colors">
-                <p className="text-xs text-neutral-500 mb-0.5">Taux de conversion</p>
-                <p className="text-base font-semibold text-neutral-900">{stats.financial.conversionRate.toFixed(1)}%</p>
-                <p className="text-[11px] text-neutral-400 mt-1">Utilisateurs abonn&eacute;s</p>
-              </div>
-
-              <div className="bg-white rounded-md border border-neutral-200 p-3 hover:border-brand/40 transition-colors">
-                <p className="text-xs text-neutral-500 mb-0.5">CA Total</p>
-                <p className="text-base font-semibold text-neutral-900">{formatCurrency(stats.financial.totalRevenue)}</p>
-                <p className="text-[11px] text-neutral-400 mt-1">Abonnements cumul&eacute;s</p>
-              </div>
-            </div>
-
-            {/* Répartition par Type */}
-            <div className="bg-white rounded-md border border-neutral-200 p-3">
-              <h2 className="text-xs font-medium mb-2.5 uppercase tracking-wider text-neutral-500">R&eacute;partition des abonnements</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <h3 className="text-xs font-medium text-neutral-700 mb-2">Adh&eacute;sion &Eacute;v&eacute;nementielle</h3>
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-neutral-600">Nombre d&apos;abonn&eacute;s</span>
-                      <span className="text-sm font-semibold text-neutral-900">{stats.financial.eventBasedCount}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-neutral-600">Prix unitaire</span>
-                      <span className="text-xs font-medium text-neutral-700">{formatCurrency(SUBSCRIPTION_PRICES.event_based.cents)} / an</span>
-                    </div>
+            {/* Secondary metrics + Subscription breakdown side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-3">
+              {/* Left: secondary financial metrics */}
+              <div className="lg:col-span-2 bg-white rounded-lg border border-neutral-200 p-4">
+                <h3 className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 mb-3">
+                  M&eacute;triques financi&egrave;res
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs text-neutral-500">ARPU</p>
+                    <p className="text-base font-semibold text-neutral-900 mt-0.5">
+                      {fmtFull(stats.financial.arpu)}
+                    </p>
                   </div>
-                </div>
-                <div>
-                  <h3 className="text-xs font-medium text-neutral-700 mb-2">Adh&eacute;sion Illimit&eacute;e</h3>
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-neutral-600">Nombre d&apos;abonn&eacute;s</span>
-                      <span className="text-sm font-semibold text-neutral-900">{stats.financial.unlimitedCount}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-neutral-600">Prix unitaire</span>
-                      <span className="text-xs font-medium text-neutral-700">{formatCurrency(SUBSCRIPTION_PRICES.unlimited.cents)} / an</span>
-                    </div>
+                  <div>
+                    <p className="text-xs text-neutral-500">Conversion</p>
+                    <p className="text-base font-semibold text-neutral-900 mt-0.5">
+                      {stats.financial.conversionRate.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-neutral-500">CA total</p>
+                    <p className="text-base font-semibold text-neutral-900 mt-0.5">
+                      {fmtFull(stats.financial.totalRevenue)}
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Événements */}
-            <div className="bg-white rounded-md border border-neutral-200 p-3">
-              <h2 className="text-xs font-medium mb-2.5 uppercase tracking-wider text-neutral-500">&Eacute;v&eacute;nements</h2>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="text-center">
-                  <p className="text-xs text-neutral-500 mb-0.5">Total</p>
-                  <p className="text-base font-semibold text-neutral-900">{stats.events.total}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-neutral-500 mb-0.5">&Agrave; venir</p>
-                  <p className="text-base font-semibold text-neutral-900">{stats.events.upcoming}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-neutral-500 mb-0.5">Pass&eacute;s</p>
-                  <p className="text-base font-semibold text-neutral-900">{stats.events.past}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-neutral-500 mb-0.5">Annul&eacute;s</p>
-                  <p className="text-base font-semibold text-neutral-900">{stats.events.cancelled}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-neutral-500 mb-0.5">En ligne</p>
-                  <p className="text-base font-semibold text-neutral-900">{stats.events.online}</p>
-                </div>
+              {/* Right: subscription breakdown */}
+              <div className="bg-white rounded-lg border border-neutral-200 p-4">
+                <h3 className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 mb-3">
+                  Abonnements
+                </h3>
+                <InlineRow
+                  label="&Eacute;v&eacute;nementielle"
+                  value={stats.financial.eventBasedCount}
+                  sub={`\u00D7 ${fmtFull(SUBSCRIPTION_PRICES.event_based.cents)}/an`}
+                />
+                <InlineRow
+                  label="Illimit&eacute;e"
+                  value={stats.financial.unlimitedCount}
+                  sub={`\u00D7 ${fmtFull(SUBSCRIPTION_PRICES.unlimited.cents)}/an`}
+                />
+                <InlineRow
+                  label="Inactifs"
+                  value={stats.financial.inactiveSubscriptions}
+                />
               </div>
             </div>
 
-            {/* Participation */}
-            <div className="bg-white rounded-md border border-neutral-200 p-3">
-              <h2 className="text-xs font-medium mb-2.5 uppercase tracking-wider text-neutral-500">Participation</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div>
-                  <p className="text-xs text-neutral-500 mb-0.5">R&eacute;servations</p>
-                  <p className="text-lg font-semibold text-neutral-900">{stats.participants.totalBookings}</p>
-                  <p className="text-[11px] text-neutral-400 mt-1">
-                    Moy. {stats.participants.averagePerEvent.toFixed(1)}/&eacute;v&eacute;nement
-                  </p>
+            {/* Events + Participation */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+              {/* Events */}
+              <div className="bg-white rounded-lg border border-neutral-200 p-4">
+                <h3 className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 mb-3">
+                  &Eacute;v&eacute;nements
+                </h3>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="w-3.5 h-3.5 text-neutral-400" />
+                    <span className="text-xs text-neutral-500">Total</span>
+                    <span className="ml-auto text-sm font-medium text-neutral-900">{stats.events.total}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ArrowUpRight className="w-3.5 h-3.5 text-neutral-400" />
+                    <span className="text-xs text-neutral-500">&Agrave; venir</span>
+                    <span className="ml-auto text-sm font-medium text-neutral-900">{stats.events.upcoming}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-neutral-400" />
+                    <span className="text-xs text-neutral-500">Pass&eacute;s</span>
+                    <span className="ml-auto text-sm font-medium text-neutral-900">{stats.events.past}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <XCircle className="w-3.5 h-3.5 text-neutral-400" />
+                    <span className="text-xs text-neutral-500">Annul&eacute;s</span>
+                    <span className="ml-auto text-sm font-medium text-neutral-900">{stats.events.cancelled}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-3.5 h-3.5 text-neutral-400" />
+                    <span className="text-xs text-neutral-500">En ligne</span>
+                    <span className="ml-auto text-sm font-medium text-neutral-900">{stats.events.online}</span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-neutral-500 mb-0.5">Invit&eacute;s</p>
-                  <p className="text-lg font-semibold text-neutral-900">{stats.participants.totalGuests}</p>
-                  <p className="text-[11px] text-neutral-400 mt-1">
-                    {stats.participants.guestsValidated} valid&eacute;s, {stats.participants.guestsPending} en attente
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500 mb-0.5">CA &Eacute;v&eacute;nements</p>
-                  <p className="text-lg font-semibold text-neutral-900">{formatCurrency(stats.participants.totalRevenue)}</p>
-                  <p className="text-[11px] text-neutral-400 mt-1">Billetterie</p>
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500 mb-0.5">Places r&eacute;serv&eacute;es</p>
-                  <p className="text-lg font-semibold text-neutral-900">{stats.participants.totalPlaces}</p>
-                  <p className="text-[11px] text-neutral-400 mt-1">Total</p>
-                </div>
+              </div>
+
+              {/* Participation */}
+              <div className="bg-white rounded-lg border border-neutral-200 p-4">
+                <h3 className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 mb-3">
+                  Participation
+                </h3>
+                <InlineRow
+                  label="R&eacute;servations"
+                  value={stats.participants.totalBookings}
+                  sub={`moy. ${stats.participants.averagePerEvent.toFixed(1)}/evt`}
+                />
+                <InlineRow
+                  label="Invit&eacute;s"
+                  value={stats.participants.totalGuests}
+                  sub={`${stats.participants.guestsValidated} valid&eacute;s \u00B7 ${stats.participants.guestsPending} en attente`}
+                />
+                <InlineRow
+                  label="CA billetterie"
+                  value={fmtFull(stats.participants.totalRevenue)}
+                />
+                <InlineRow
+                  label="Places r&eacute;serv&eacute;es"
+                  value={stats.participants.totalPlaces}
+                />
               </div>
             </div>
           </>
