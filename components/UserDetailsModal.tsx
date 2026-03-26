@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, User, Mail, Briefcase, Calendar, DollarSign, Shield, Link as LinkIcon, Award, Tag, Plus, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { User as UserType, usersApi } from '@/lib/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -9,424 +9,186 @@ import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
 interface UserDetailsModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    user: UserType | null;
-    onUserUpdated?: (updatedUser: UserType) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  user: UserType | null;
+  onUserUpdated?: (updatedUser: UserType) => void;
 }
 
-export default function UserDetailsModal({
-    isOpen,
-    onClose,
-    user,
-    onUserUpdated,
-}: UserDetailsModalProps) {
-    const queryClient = useQueryClient();
-    const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
-    const [subscriptionType, setSubscriptionType] = useState<'event_based' | 'unlimited'>('event_based');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+function Row({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
+  return (
+    <div className="flex items-start justify-between py-2 border-b border-neutral-100 last:border-0">
+      <span className="text-xs text-neutral-500 w-32 flex-shrink-0">{label}</span>
+      <span className={`text-sm text-neutral-900 text-right ${mono ? 'font-mono text-xs' : ''}`}>
+        {value || <span className="text-neutral-400">—</span>}
+      </span>
+    </div>
+  );
+}
 
-    if (!isOpen || !user) return null;
+function StatusDot({ active }: { active: boolean }) {
+  return <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${active ? 'bg-green-500' : 'bg-neutral-300'}`} />;
+}
 
-    const resetForm = () => {
-        setShowSubscriptionForm(false);
-        setSubscriptionType('event_based');
-        setStartDate('');
-        setEndDate('');
-    };
+export default function UserDetailsModal({ isOpen, onClose, user, onUserUpdated }: UserDetailsModalProps) {
+  const queryClient = useQueryClient();
+  const [showSubForm, setShowSubForm] = useState(false);
+  const [subType, setSubType] = useState<'event_based' | 'unlimited'>('event_based');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleCreateSubscription = async () => {
-        if (!startDate || !endDate) {
-            toast.error('Veuillez renseigner les dates de debut et de fin');
-            return;
-        }
+  if (!isOpen || !user) return null;
 
-        if (new Date(endDate) <= new Date(startDate)) {
-            toast.error('La date de fin doit etre posterieure a la date de debut');
-            return;
-        }
+  const resetForm = () => { setShowSubForm(false); setSubType('event_based'); setStartDate(''); setEndDate(''); };
 
-        try {
-            setIsSubmitting(true);
-            const result = await usersApi.createSubscription(user.id, {
-                subscription_type: subscriptionType,
-                start_date: new Date(startDate).toISOString(),
-                end_date: new Date(endDate).toISOString(),
-            });
-            toast.success(result.message || 'Abonnement cree avec succes');
-            resetForm();
-            // Rafraichir les donnees
-            await queryClient.invalidateQueries({ queryKey: ['users'] });
-            if (onUserUpdated && result.data) {
-                onUserUpdated(result.data as UserType);
-            }
-        } catch (err) {
-            const error = err as { response?: { data?: { message?: string } } };
-            toast.error(error.response?.data?.message || 'Erreur lors de la creation de l\'abonnement');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+  const handleCreateSub = async () => {
+    if (!startDate || !endDate) { toast.error('Dates requises'); return; }
+    if (new Date(endDate) <= new Date(startDate)) { toast.error('Date fin > date début'); return; }
+    try {
+      setIsSubmitting(true);
+      const result = await usersApi.createSubscription(user.id, {
+        subscription_type: subType,
+        start_date: new Date(startDate).toISOString(),
+        end_date: new Date(endDate).toISOString(),
+      });
+      toast.success(result.message || 'Abonnement créé');
+      resetForm();
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      if (onUserUpdated && result.data) onUserUpdated(result.data as UserType);
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Erreur');
+    } finally { setIsSubmitting(false); }
+  };
 
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return '-';
-        return format(new Date(dateString), 'dd MMMM yyyy', { locale: fr });
-    };
+  const fmtDate = (d: string | null) => d ? format(new Date(d), 'dd MMM yyyy', { locale: fr }) : '—';
+  const fmtPrice = (c: number | null) => c ? `${(c / 100).toFixed(2)} €` : '—';
+  const posDur: Record<string, string> = { less_than_1: '<1 an', '1_to_3': '1-3 ans', '3_to_5': '3-5 ans', more_than_5: '5+ ans' };
 
-    const formatPrice = (cents: number | null) => {
-        if (!cents) return '-';
-        return (cents / 100).toFixed(2) + ' €';
-    };
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/30 z-[100]" onClick={onClose} />
 
-    const getPositionDurationLabel = (duration: string | null) => {
-        const labels: Record<string, string> = {
-            'less_than_1': 'Moins d\'un an',
-            '1_to_3': '1 à 3 ans',
-            '3_to_5': '3 à 5 ans',
-            'more_than_5': 'Plus de 5 ans',
-        };
-        return duration ? labels[duration] || duration : '-';
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4" onClick={onClose}>
-            <div
-                className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="sticky top-0 bg-white border-b border-neutral-200 px-4 py-3 flex items-center justify-between z-10">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-brand/5 flex items-center justify-center">
-                            <User className="w-4 h-4 text-brand" />
-                        </div>
-                        <div>
-                            <h2 className="text-sm font-semibold text-neutral-900">
-                                {user.firstName} {user.lastName}
-                            </h2>
-                            <p className="text-xs text-neutral-500">{user.email}</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 hover:bg-neutral-100 rounded-md transition-colors"
-                    >
-                        <X className="w-4 h-4 text-neutral-500" />
-                    </button>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 space-y-4">
-                    {/* Badges Rôle et Statut */}
-                    <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.role.toLowerCase() === 'admin'
-                            ? 'bg-brand/5 text-brand'
-                            : 'bg-neutral-100 text-neutral-600'
-                            }`}>
-                            <Shield className="w-3 h-3 mr-1" />
-                            {user.role.toLowerCase() === 'admin' ? 'Administrateur' : 'Utilisateur'}
-                        </span>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.onboardingCompleted
-                            ? 'bg-green-50 text-green-700'
-                            : 'bg-yellow-50 text-yellow-700'
-                            }`}>
-                            {user.onboardingCompleted ? 'Onboarding complété' : 'Onboarding en cours'}
-                        </span>
-                    </div>
-
-                    {/* Informations personnelles */}
-                    <div>
-                        <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-brand" />
-                            Informations personnelles
-                        </h3>
-                        <div className="bg-neutral-50 rounded-md p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <span className="text-[11px] text-neutral-500">Email</span>
-                                <p className="text-sm font-medium text-neutral-900 flex items-center gap-1.5 mt-0.5">
-                                    <Mail className="w-3.5 h-3.5 text-neutral-400" />
-                                    {user.email}
-                                </p>
-                            </div>
-                            <div>
-                                <span className="text-[11px] text-neutral-500">Association</span>
-                                <p className="text-sm font-medium text-neutral-900">{user.association || 'Non renseignée'}</p>
-                            </div>
-                            {user.linkedinUrl && (
-                                <div className="md:col-span-2">
-                                    <span className="text-[11px] text-neutral-500">LinkedIn</span>
-                                    <a
-                                        href={user.linkedinUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm font-medium text-brand hover:underline flex items-center gap-1.5 mt-0.5"
-                                    >
-                                        <LinkIcon className="w-3.5 h-3.5" />
-                                        {user.linkedinUrl}
-                                    </a>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Informations professionnelles */}
-                    {(user.currentPosition || user.activitySector || user.positionDuration || user.careerPath || user.interests) && (
-                        <div>
-                            <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <Briefcase className="w-3.5 h-3.5 text-brand" />
-                                Parcours professionnel
-                            </h3>
-                            <div className="bg-neutral-50 rounded-md p-3 space-y-3">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {user.currentPosition && (
-                                        <div>
-                                            <span className="text-[11px] text-neutral-500">Poste actuel</span>
-                                            <p className="text-sm font-medium text-neutral-900">{user.currentPosition}</p>
-                                        </div>
-                                    )}
-                                    {user.activitySector && (
-                                        <div>
-                                            <span className="text-[11px] text-neutral-500">Secteur d&apos;activité</span>
-                                            <p className="text-sm font-medium text-neutral-900">{user.activitySector}</p>
-                                        </div>
-                                    )}
-                                    {user.positionDuration && (
-                                        <div>
-                                            <span className="text-[11px] text-neutral-500">Ancienneté au poste</span>
-                                            <p className="text-sm font-medium text-neutral-900">{getPositionDurationLabel(user.positionDuration)}</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {user.careerPath && (
-                                    <div>
-                                        <span className="text-[11px] text-neutral-500 block mb-1">Parcours</span>
-                                        <p className="text-neutral-900 text-xs leading-relaxed whitespace-pre-wrap bg-white p-2.5 rounded-md border border-neutral-200">
-                                            {user.careerPath}
-                                        </p>
-                                    </div>
-                                )}
-
-                                {user.interests && Array.isArray(user.interests) && user.interests.length > 0 && (
-                                    <div>
-                                        <span className="text-[11px] text-neutral-500 block mb-1">Centres d&apos;intérêt</span>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {user.interests.map((interest, index) => (
-                                                <span
-                                                    key={index}
-                                                    className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-brand/5 text-brand"
-                                                >
-                                                    <Tag className="w-2.5 h-2.5 mr-1" />
-                                                    {interest}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Abonnement */}
-                    <div>
-                        <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                            <Award className="w-3.5 h-3.5 text-brand" />
-                            Abonnement
-                        </h3>
-                        <div className="bg-neutral-50 rounded-md p-3 space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                    <span className="text-[11px] text-neutral-500">Type d&apos;abonnement</span>
-                                    <p className="text-sm font-medium text-neutral-900">
-                                        {user.subscriptionType === 'unlimited' ? 'Adhésion Illimitée' :
-                                            user.subscriptionType === 'event_based' ? 'Adhésion Événementielle' :
-                                                'Aucun'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="text-[11px] text-neutral-500">Statut</span>
-                                    <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-medium ${user.subscriptionStatus === 'ACTIVE' ? 'bg-green-50 text-green-700' :
-                                        user.subscriptionStatus === 'INACTIVE' ? 'bg-gray-100 text-gray-600' :
-                                            user.subscriptionStatus === 'EXPIRED' ? 'bg-red-50 text-red-700' :
-                                                'bg-neutral-100 text-neutral-600'
-                                        }`}>
-                                        {user.subscriptionStatus === 'ACTIVE' ? 'Actif' :
-                                            user.subscriptionStatus === 'INACTIVE' ? 'Inactif' :
-                                                user.subscriptionStatus === 'EXPIRED' ? 'Expiré' :
-                                                    'Aucun'}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className="text-[11px] text-neutral-500">Prix</span>
-                                    <p className="text-sm font-medium text-neutral-900 flex items-center gap-1">
-                                        <DollarSign className="w-3.5 h-3.5 text-neutral-400" />
-                                        {formatPrice(user.subscriptionPriceCents)}
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="text-[11px] text-neutral-500">Période</span>
-                                    <p className="text-xs text-neutral-900">
-                                        {user.subscriptionStartDate ? formatDate(user.subscriptionStartDate) : '-'}
-                                        {' → '}
-                                        {user.subscriptionEndDate ? formatDate(user.subscriptionEndDate) : '-'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {user.stripeCustomerId && (
-                                <div className="pt-2.5 border-t border-neutral-200">
-                                    <span className="text-[11px] text-neutral-500 block mb-1.5">Identifiants Stripe</span>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        <div>
-                                            <span className="text-[10px] text-neutral-400">Customer ID</span>
-                                            <p className="text-[11px] font-mono text-neutral-600 bg-white px-2 py-1 rounded border border-neutral-200 mt-0.5">
-                                                {user.stripeCustomerId}
-                                            </p>
-                                        </div>
-                                        {user.stripeSubscriptionId && (
-                                            <div>
-                                                <span className="text-[10px] text-neutral-400">Subscription ID</span>
-                                                <p className="text-[11px] font-mono text-neutral-600 bg-white px-2 py-1 rounded border border-neutral-200 mt-0.5">
-                                                    {user.stripeSubscriptionId}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Creer un abonnement manuellement */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
-                                <Plus className="w-3.5 h-3.5 text-brand" />
-                                Creer un abonnement
-                            </h3>
-                            {!showSubscriptionForm && (
-                                <button
-                                    onClick={() => setShowSubscriptionForm(true)}
-                                    className="text-xs text-brand hover:text-brand-dark font-medium transition-colors"
-                                >
-                                    Creer manuellement
-                                </button>
-                            )}
-                        </div>
-
-                        {showSubscriptionForm && (
-                            <div className="bg-neutral-50 rounded-md p-3 space-y-3 border border-brand/20">
-                                {/* Type d'abonnement */}
-                                <div>
-                                    <label htmlFor="sub-type" className="text-[11px] text-neutral-500 block mb-1">
-                                        Type d&apos;abonnement
-                                    </label>
-                                    <select
-                                        id="sub-type"
-                                        value={subscriptionType}
-                                        onChange={(e) => setSubscriptionType(e.target.value as 'event_based' | 'unlimited')}
-                                        className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
-                                    >
-                                        <option value="event_based">Adhesion Evenementielle</option>
-                                        <option value="unlimited">Adhesion Illimitee</option>
-                                    </select>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {/* Date de debut */}
-                                    <div>
-                                        <label htmlFor="sub-start" className="text-[11px] text-neutral-500 block mb-1">
-                                            Date de debut
-                                        </label>
-                                        <input
-                                            id="sub-start"
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(e) => setStartDate(e.target.value)}
-                                            className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
-                                        />
-                                    </div>
-
-                                    {/* Date de fin */}
-                                    <div>
-                                        <label htmlFor="sub-end" className="text-[11px] text-neutral-500 block mb-1">
-                                            Date de fin
-                                        </label>
-                                        <input
-                                            id="sub-end"
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(e) => setEndDate(e.target.value)}
-                                            className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex items-center justify-end gap-2 pt-1">
-                                    <button
-                                        onClick={resetForm}
-                                        disabled={isSubmitting}
-                                        className="px-3 py-1.5 text-xs text-neutral-600 bg-neutral-100 rounded-md hover:bg-neutral-200 transition-colors font-medium disabled:opacity-50"
-                                    >
-                                        Annuler
-                                    </button>
-                                    <button
-                                        onClick={handleCreateSubscription}
-                                        disabled={isSubmitting || !startDate || !endDate}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-brand text-white rounded-md hover:bg-brand-dark transition-colors font-medium disabled:opacity-50"
-                                    >
-                                        {isSubmitting ? (
-                                            <>
-                                                <Loader2 className="w-3 h-3 animate-spin" />
-                                                Creation...
-                                            </>
-                                        ) : (
-                                            'Creer l\'abonnement'
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Dates système */}
-                    <div>
-                        <h3 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-brand" />
-                            Informations système
-                        </h3>
-                        <div className="bg-neutral-50 rounded-md p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <span className="text-[11px] text-neutral-500">Date de création</span>
-                                <p className="text-sm font-medium text-neutral-900">{formatDate(user.createdAt)}</p>
-                            </div>
-                            <div>
-                                <span className="text-[11px] text-neutral-500">Dernière mise à jour</span>
-                                <p className="text-sm font-medium text-neutral-900">{formatDate(user.updatedAt)}</p>
-                            </div>
-                            <div>
-                                <span className="text-[11px] text-neutral-500">ID Utilisateur</span>
-                                <p className="text-[11px] font-mono text-neutral-600 bg-white px-2 py-1 rounded border border-neutral-200 mt-0.5">
-                                    {user.id}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="sticky bottom-0 bg-white border-t border-neutral-200 px-4 py-3 flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-3 py-1.5 text-xs bg-brand text-white rounded-md hover:bg-brand-dark transition-colors font-medium"
-                    >
-                        Fermer
-                    </button>
-                </div>
-            </div>
+      {/* Slide-over panel from right */}
+      <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white z-[101] shadow-xl flex flex-col">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between flex-shrink-0">
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-900">{user.firstName} {user.lastName}</h2>
+            <p className="text-xs text-neutral-500">{user.email}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-neutral-100 rounded-md">
+            <X className="w-4 h-4 text-neutral-400" />
+          </button>
         </div>
-    );
+
+        {/* Content — scrollable */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+
+          {/* Status badges */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center bg-neutral-100 text-neutral-600 rounded-full px-2.5 py-0.5 text-[11px] font-medium">
+              <StatusDot active={user.role.toLowerCase() !== 'user'} />
+              {user.role.toLowerCase() === 'superadmin' ? 'Super Admin' : user.role.toLowerCase() === 'admin' ? 'Admin' : 'Utilisateur'}
+            </span>
+            <span className="inline-flex items-center bg-neutral-100 text-neutral-600 rounded-full px-2.5 py-0.5 text-[11px] font-medium">
+              <StatusDot active={user.subscriptionStatus === 'ACTIVE'} />
+              {user.subscriptionStatus === 'ACTIVE' ? 'Abonnement actif' : user.subscriptionStatus === 'EXPIRED' ? 'Expiré' : 'Aucun abonnement'}
+            </span>
+          </div>
+
+          {/* Personal info */}
+          <div>
+            <p className="text-[11px] text-neutral-400 uppercase tracking-wider font-medium mb-2">Informations</p>
+            <div className="bg-white">
+              <Row label="Email" value={user.email} />
+              <Row label="Association" value={user.association} />
+              {user.linkedinUrl && (
+                <Row label="LinkedIn" value={
+                  <a href={user.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-neutral-600 hover:underline text-xs truncate max-w-[200px] inline-block">
+                    {user.linkedinUrl.replace(/https?:\/\/(www\.)?linkedin\.com\/in\//, '')}
+                  </a>
+                } />
+              )}
+              <Row label="Membre depuis" value={fmtDate(user.createdAt)} />
+              <Row label="ID" value={user.id} mono />
+            </div>
+          </div>
+
+          {/* Professional */}
+          {(user.currentPosition || user.activitySector) && (
+            <div>
+              <p className="text-[11px] text-neutral-400 uppercase tracking-wider font-medium mb-2">Parcours professionnel</p>
+              <Row label="Poste" value={user.currentPosition} />
+              <Row label="Secteur" value={user.activitySector} />
+              <Row label="Ancienneté" value={user.positionDuration ? posDur[user.positionDuration] || user.positionDuration : null} />
+              {user.careerPath && <Row label="Parcours" value={<span className="text-xs leading-relaxed">{user.careerPath}</span>} />}
+              {user.interests && Array.isArray(user.interests) && user.interests.length > 0 && (
+                <div className="pt-2">
+                  <span className="text-xs text-neutral-500">Intérêts</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {user.interests.map((i, idx) => (
+                      <span key={idx} className="bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5 text-[10px]">{i}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Subscription */}
+          <div>
+            <p className="text-[11px] text-neutral-400 uppercase tracking-wider font-medium mb-2">Abonnement</p>
+            <Row label="Type" value={user.subscriptionType === 'unlimited' ? 'Illimitée' : user.subscriptionType === 'event_based' ? 'Événementielle' : '—'} />
+            <Row label="Statut" value={user.subscriptionStatus === 'ACTIVE' ? 'Actif' : user.subscriptionStatus === 'EXPIRED' ? 'Expiré' : '—'} />
+            <Row label="Prix" value={fmtPrice(user.subscriptionPriceCents)} />
+            <Row label="Période" value={user.subscriptionStartDate ? `${fmtDate(user.subscriptionStartDate)} → ${fmtDate(user.subscriptionEndDate)}` : '—'} />
+            {user.stripeCustomerId && <Row label="Stripe Customer" value={user.stripeCustomerId} mono />}
+            {user.stripeSubscriptionId && <Row label="Stripe Sub" value={user.stripeSubscriptionId} mono />}
+          </div>
+
+          {/* Create subscription */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] text-neutral-400 uppercase tracking-wider font-medium">Créer un abonnement</p>
+              {!showSubForm && (
+                <button onClick={() => setShowSubForm(true)} className="text-[11px] text-neutral-600 hover:text-neutral-900 font-medium">
+                  Créer manuellement
+                </button>
+              )}
+            </div>
+            {showSubForm && (
+              <div className="bg-neutral-50 rounded-lg p-3 space-y-2.5 border border-neutral-200">
+                <select
+                  value={subType}
+                  onChange={(e) => setSubType(e.target.value as 'event_based' | 'unlimited')}
+                  className="w-full h-8 px-2.5 text-xs border border-neutral-200 rounded-md bg-white focus:outline-none focus:border-neutral-400"
+                >
+                  <option value="event_based">Événementielle</option>
+                  <option value="unlimited">Illimitée</option>
+                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                    className="h-8 px-2.5 text-xs border border-neutral-200 rounded-md bg-white focus:outline-none focus:border-neutral-400" />
+                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+                    className="h-8 px-2.5 text-xs border border-neutral-200 rounded-md bg-white focus:outline-none focus:border-neutral-400" />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={resetForm} disabled={isSubmitting}
+                    className="px-3 py-1.5 text-[11px] text-neutral-600 hover:bg-neutral-100 rounded-md font-medium">Annuler</button>
+                  <button onClick={handleCreateSub} disabled={isSubmitting || !startDate || !endDate}
+                    className="px-3 py-1.5 text-[11px] text-white bg-neutral-900 rounded-md hover:bg-neutral-800 font-medium disabled:opacity-40 flex items-center gap-1">
+                    {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                    Créer
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }

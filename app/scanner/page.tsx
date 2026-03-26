@@ -3,45 +3,34 @@
 import React from 'react';
 import QRScanner from '@/components/QRScanner';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { ArrowLeft, Camera, BarChart3 } from 'lucide-react';
+import { ArrowLeft, ScanLine, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ScannerPage() {
   return (
     <ProtectedRoute>
-    <div className="min-h-screen bg-neutral-50">
-      {/* Header blanc + texte plus petit */}
-      <div className="bg-white border-b border-neutral-200 shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link
-                href="/events"
-                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-neutral-700" />
-              </Link>
-              <div className="flex items-center gap-2">
-                <Camera className="w-5 h-5 text-brand" />
-                <h1 className="text-base font-semibold text-neutral-800">Contrôle d&apos;accès</h1>
-              </div>
+      <div className="min-h-screen bg-neutral-950">
+        {/* Minimal header — dark theme for scanning context */}
+        <header className="bg-neutral-900 border-b border-neutral-800">
+          <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
+            <Link href="/scanner/stats" className="p-1.5 -ml-1.5 text-neutral-400 hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <div className="flex items-center gap-2">
+              <ScanLine className="w-4 h-4 text-brand" />
+              <span className="text-sm font-medium text-white">Contrôle d&apos;accès</span>
             </div>
-            <Link
-              href="/scanner/stats"
-              className="flex items-center gap-2 px-3 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors text-sm font-medium text-neutral-700"
-            >
+            <Link href="/scanner/stats" className="p-1.5 -mr-1.5 text-neutral-400 hover:text-white transition-colors">
               <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Stats</span>
             </Link>
           </div>
-        </div>
-      </div>
+        </header>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-4">
-        <QRScanner />
+        {/* Scanner — full width, dark bg optimal for camera */}
+        <main className="max-w-lg mx-auto px-4 py-4">
+          <QRScanner />
+        </main>
       </div>
-    </div>
     </ProtectedRoute>
   );
 }

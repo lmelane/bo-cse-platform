@@ -9,7 +9,7 @@ import Pagination from '@/components/Pagination';
 import {
   Calendar, Search, Loader2, AlertCircle, Plus, Edit, Trash2,
   Globe, EyeOff, FileText, MoreVertical, Users, UserCheck, Euro,
-  CheckCircle, Clock, XCircle, ExternalLink
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -62,7 +62,6 @@ export default function EventsPage() {
       'Erreur lors du chargement des événements'
     : '';
 
-  // Ouvrir l'événement dans un nouvel onglet
   const handleViewEvent = (event: Event) => {
     const eventUrl = `${FRONTEND_URL}/evenements/${event.slug}`;
     window.open(eventUrl, '_blank', 'noopener,noreferrer');
@@ -85,11 +84,9 @@ export default function EventsPage() {
       setIsSubmitting(true);
 
       if (selectedEvent) {
-        // Mise à jour
         await eventsApi.update(selectedEvent.id, data);
         toast.success('Événement mis à jour avec succès !');
       } else {
-        // Création
         await eventsApi.create(data);
         toast.success('Événement créé avec succès !');
       }
@@ -131,7 +128,6 @@ export default function EventsPage() {
     setOpenMenuId(null);
   };
 
-  // BO5 fix: appliquer le filtre par événement ET la recherche texte
   const filteredEvents = events.filter(event => {
     const matchesSearch = !searchTerm ||
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,14 +137,12 @@ export default function EventsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
   const paginatedEvents = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredEvents.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredEvents, currentPage, ITEMS_PER_PAGE]);
 
-  // Reset page when filters change
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
@@ -158,46 +152,17 @@ export default function EventsPage() {
     setCurrentPage(1);
   };
 
-  const getStatusBadge = (status: Event['status']) => {
-    const styles = {
-      scheduled: 'bg-blue-100 text-blue-700',
-      ongoing: 'bg-green-100 text-green-700',
-      completed: 'bg-neutral-100 text-neutral-700',
-      cancelled: 'bg-red-100 text-red-700',
-    };
-
-    const labels = {
-      scheduled: 'Planifié',
-      ongoing: 'En cours',
-      completed: 'Terminé',
-      cancelled: 'Annulé',
-    };
-
-    return (
-      <span className={`px-2 py-1 rounded-md text-xs font-medium ${styles[status]}`}>
-        {labels[status]}
-      </span>
-    );
+  const statusLabels: Record<Event['status'], string> = {
+    scheduled: 'Planifié',
+    ongoing: 'En cours',
+    completed: 'Terminé',
+    cancelled: 'Annulé',
   };
 
-  const getPublicationBadge = (publicationStatus: Event['publicationStatus']) => {
-    const styles = {
-      online: 'bg-green-100 text-green-700',
-      draft: 'bg-yellow-100 text-yellow-700',
-      offline: 'bg-neutral-100 text-neutral-700',
-    };
-
-    const labels = {
-      online: 'En ligne',
-      draft: 'Brouillon',
-      offline: 'Hors ligne',
-    };
-
-    return (
-      <span className={`px-2 py-1 rounded-md text-xs font-medium ${styles[publicationStatus]}`}>
-        {labels[publicationStatus]}
-      </span>
-    );
+  const publicationLabels: Record<Event['publicationStatus'], string> = {
+    online: 'En ligne',
+    draft: 'Brouillon',
+    offline: 'Hors ligne',
   };
 
   const formatDate = (dateString: string | null) => {
@@ -230,9 +195,9 @@ export default function EventsPage() {
           </button>
         </div>
 
-        {/* Recherche et filtres */}
-        <div className="bg-white rounded-md border border-neutral-200 p-3">
-          <div className="flex flex-col md:flex-row gap-2.5">
+        {/* Search and filters */}
+        <div className="bg-white rounded-md border border-neutral-200 p-4">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -241,7 +206,7 @@ export default function EventsPage() {
                   placeholder="Rechercher par titre, slug ou ville..."
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400"
                 />
               </div>
             </div>
@@ -249,7 +214,7 @@ export default function EventsPage() {
               <select
                 value={filterEventId}
                 onChange={(e) => handleFilterChange(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-neutral-400 focus:border-neutral-400"
               >
                 <option value="all">Tous les événements</option>
                 {events.map((event) => (
@@ -262,15 +227,15 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {/* Statistiques des participants */}
+        {/* Stats cards */}
         {!loading && !loadingStats && participants && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="bg-white rounded-md border border-neutral-200 p-3">
+            <div className="bg-white rounded-md border border-neutral-200 p-4">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium text-neutral-500">Réservations</p>
-                <Users className="w-4 h-4 text-brand" />
+                <p className="text-xs text-neutral-500">Réservations</p>
+                <Users className="w-4 h-4 text-neutral-400" />
               </div>
-              <p className="text-lg font-semibold text-neutral-900">
+              <p className="text-lg font-medium text-neutral-900">
                 {participants.stats.totalBookings}
               </p>
               <p className="text-[11px] text-neutral-400 mt-0.5">
@@ -278,36 +243,27 @@ export default function EventsPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-md border border-neutral-200 p-3">
+            <div className="bg-white rounded-md border border-neutral-200 p-4">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium text-neutral-500">Invités</p>
-                <UserCheck className="w-4 h-4 text-purple-600" />
+                <p className="text-xs text-neutral-500">Invités</p>
+                <UserCheck className="w-4 h-4 text-neutral-400" />
               </div>
-              <p className="text-lg font-semibold text-neutral-900">
+              <p className="text-lg font-medium text-neutral-900">
                 {participants.stats.totalGuests}
               </p>
-              <div className="flex gap-2 mt-1 text-[11px]">
-                <span className="text-green-600 flex items-center gap-0.5">
-                  <CheckCircle className="w-3 h-3" />
-                  {participants.stats.guestsValidated}
-                </span>
-                <span className="text-yellow-600 flex items-center gap-0.5">
-                  <Clock className="w-3 h-3" />
-                  {participants.stats.guestsPending}
-                </span>
-                <span className="text-red-600 flex items-center gap-0.5">
-                  <XCircle className="w-3 h-3" />
-                  {participants.stats.guestsRefused}
-                </span>
+              <div className="flex gap-3 mt-1 text-[11px] text-neutral-500">
+                <span>{participants.stats.guestsValidated} validés</span>
+                <span>{participants.stats.guestsPending} en attente</span>
+                <span>{participants.stats.guestsRefused} refusés</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-md border border-neutral-200 p-3">
+            <div className="bg-white rounded-md border border-neutral-200 p-4">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium text-neutral-500">Revenu Total</p>
-                <Euro className="w-4 h-4 text-green-600" />
+                <p className="text-xs text-neutral-500">Revenu Total</p>
+                <Euro className="w-4 h-4 text-neutral-400" />
               </div>
-              <p className="text-lg font-semibold text-neutral-900">
+              <p className="text-lg font-medium text-neutral-900">
                 {(participants.stats.totalRevenue / 100).toFixed(2)} €
               </p>
               <p className="text-[11px] text-neutral-400 mt-0.5">
@@ -317,112 +273,112 @@ export default function EventsPage() {
           </div>
         )}
 
-        {/* Loading des stats */}
+        {/* Loading skeleton for stats */}
         {loadingStats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div key={i} className="bg-white rounded-md border border-neutral-200 p-4">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-neutral-200 rounded w-1/2 mb-3"></div>
-                  <div className="h-8 bg-neutral-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-neutral-200 rounded w-full"></div>
+                  <div className="h-3 bg-neutral-100 rounded w-1/2 mb-3"></div>
+                  <div className="h-6 bg-neutral-100 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-neutral-100 rounded w-full"></div>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Contenu */}
+        {/* Content */}
         {loading ? (
           <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
-            <Loader2 className="w-12 h-12 text-brand mx-auto mb-4 animate-spin" />
-            <p className="text-neutral-600">Chargement des événements...</p>
+            <Loader2 className="w-8 h-8 text-neutral-400 mx-auto mb-3 animate-spin" />
+            <p className="text-sm text-neutral-500">Chargement des événements...</p>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="bg-white border border-neutral-200 rounded-md p-4 flex items-start gap-3">
+            <AlertCircle className="w-4 h-4 text-neutral-400 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-red-900 mb-1">Erreur</h3>
-              <p className="text-red-700">{error}</p>
+              <p className="text-sm font-semibold text-neutral-900 mb-0.5">Erreur</p>
+              <p className="text-sm text-neutral-600">{error}</p>
             </div>
           </div>
         ) : filteredEvents.length === 0 ? (
           <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
-            <Calendar className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-neutral-900 mb-1.5">
+            <Calendar className="w-5 h-5 text-neutral-400 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-neutral-900 mb-1">
               Aucun événement trouvé
-            </h3>
-            <p className="text-neutral-600 mb-4">
+            </p>
+            <p className="text-xs text-neutral-500 mb-4">
               {searchTerm ? 'Essayez une autre recherche.' : 'Aucun événement disponible.'}
             </p>
             {!searchTerm && (
               <button
                 onClick={handleCreate}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors font-medium"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-dark text-white rounded-md transition-colors font-medium text-xs"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 Créer le premier événement
               </button>
             )}
           </div>
         ) : (
           <>
-            {/* Vue mobile : Cartes */}
-            <div className="lg:hidden space-y-4">
+            {/* Mobile view: Cards */}
+            <div className="lg:hidden space-y-3">
               {paginatedEvents.map((event) => {
                 const attendance = eventAttendance.get(event.id);
                 return (
-                  <div key={event.id} className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-                    {/* Image + Titre */}
-                    <div className="relative">
-                      {event.coverImageUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={event.coverImageUrl}
-                          alt={event.title}
-                          className="w-full h-32 object-cover"
-                        />
-                      )}
-                      <div className="absolute top-2 right-2 flex gap-2">
-                        {getPublicationBadge(event.publicationStatus)}
-                        {getStatusBadge(event.status)}
-                      </div>
-                    </div>
+                  <div key={event.id} className="bg-white rounded-md border border-neutral-200 overflow-hidden">
+                    {event.coverImageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={event.coverImageUrl}
+                        alt={event.title}
+                        className="w-full h-28 object-cover"
+                      />
+                    )}
 
-                    {/* Contenu */}
                     <div className="p-4 space-y-3">
-                      {/* Titre */}
                       <div>
-                        <h3 className="font-semibold text-neutral-900 text-base">{event.title}</h3>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-medium text-neutral-900">{event.title}</p>
+                          <div className="flex gap-1.5 flex-shrink-0">
+                            <span className="bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5 text-[11px]">
+                              {publicationLabels[event.publicationStatus]}
+                            </span>
+                            <span className="bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5 text-[11px]">
+                              {statusLabels[event.status]}
+                            </span>
+                          </div>
+                        </div>
                         {event.subtitle && (
-                          <p className="text-sm text-neutral-600 mt-1">{event.subtitle}</p>
+                          <p className="text-xs text-neutral-500 mt-0.5">{event.subtitle}</p>
                         )}
                         {event.categoryTag && (
-                          <span className="inline-block mt-2 px-2 py-1 rounded-md text-xs font-medium bg-brand/10 text-brand">
+                          <span className="inline-block mt-1.5 bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5 text-[11px]">
                             {event.categoryTag}
                           </span>
                         )}
                       </div>
 
-                      {/* Infos */}
-                      <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <p className="text-neutral-500 text-xs">Date</p>
-                          <p className="text-neutral-900 font-medium">{formatDate(event.startsAt)}</p>
+                          <p className="text-xs text-neutral-500">Date</p>
+                          <p className="text-sm font-medium text-neutral-900">{formatDate(event.startsAt)}</p>
                         </div>
                         <div>
-                          <p className="text-neutral-500 text-xs">Lieu</p>
-                          <p className="text-neutral-900 font-medium truncate">{event.venueName || event.city || '-'}</p>
+                          <p className="text-xs text-neutral-500">Lieu</p>
+                          <p className="text-sm font-medium text-neutral-900 truncate">{event.venueName || event.city || '-'}</p>
                         </div>
                         {attendance && (
                           <>
                             <div>
-                              <p className="text-neutral-500 text-xs">Participants</p>
-                              <p className="text-neutral-900 font-bold text-lg">{attendance.totalParticipants}</p>
+                              <p className="text-xs text-neutral-500">Participants</p>
+                              <p className="text-sm font-medium text-neutral-900">{attendance.totalParticipants}</p>
                             </div>
                             <div>
-                              <p className="text-neutral-500 text-xs">Présents</p>
-                              <p className="text-green-600 font-bold text-lg">
+                              <p className="text-xs text-neutral-500">Présents</p>
+                              <p className="text-sm font-medium text-neutral-900">
                                 {attendance.presentCount}
                                 <span className="text-xs text-neutral-500 ml-1">
                                   ({attendance.totalParticipants > 0
@@ -435,28 +391,27 @@ export default function EventsPage() {
                         )}
                       </div>
 
-                      {/* Actions */}
                       <div className="flex gap-2 pt-3 border-t border-neutral-100">
                         <button
                           onClick={() => handleViewEvent(event)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-brand hover:bg-brand/5 rounded-lg transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50 rounded-md transition-colors"
                         >
-                          <ExternalLink className="w-4 h-4" />
+                          <ExternalLink className="w-4 h-4 text-neutral-400" />
                           Voir
                         </button>
                         <button
                           onClick={() => handleEdit(event)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50 rounded-md transition-colors"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-4 h-4 text-neutral-400" />
                           Modifier
                         </button>
                         <div className="relative">
                           <button
                             onClick={() => setOpenMenuId(openMenuId === event.id ? null : event.id)}
-                            className="px-3 py-2 hover:bg-neutral-100 rounded-lg transition-colors"
+                            className="px-2 py-1.5 hover:bg-neutral-50 rounded-md transition-colors"
                           >
-                            <MoreVertical className="w-5 h-5 text-neutral-600" />
+                            <MoreVertical className="w-4 h-4 text-neutral-400" />
                           </button>
 
                           {openMenuId === event.id && (
@@ -465,34 +420,34 @@ export default function EventsPage() {
                                 className="fixed inset-0 z-[90]"
                                 onClick={() => setOpenMenuId(null)}
                               />
-                              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-[100]">
+                              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-sm border border-neutral-200 py-1 z-[100]">
                                 <button
                                   onClick={() => handlePublicationChange(event, 'online')}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-green-700"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <Globe className="w-4 h-4" />
+                                  <Globe className="w-4 h-4 text-neutral-400" />
                                   Mettre en ligne
                                 </button>
                                 <button
                                   onClick={() => handlePublicationChange(event, 'offline')}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-orange-700"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <EyeOff className="w-4 h-4" />
+                                  <EyeOff className="w-4 h-4 text-neutral-400" />
                                   Mettre hors ligne
                                 </button>
                                 <button
                                   onClick={() => handlePublicationChange(event, 'draft')}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <FileText className="w-4 h-4" />
+                                  <FileText className="w-4 h-4 text-neutral-400" />
                                   Brouillon
                                 </button>
-                                <div className="border-t border-neutral-200 my-1" />
+                                <div className="border-t border-neutral-100 my-1" />
                                 <button
                                   onClick={() => handleDelete(event)}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-700"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4 text-neutral-400" />
                                   Supprimer
                                 </button>
                               </div>
@@ -506,161 +461,145 @@ export default function EventsPage() {
               })}
             </div>
 
-            {/* Vue desktop : Tableau */}
-            <div className="hidden lg:block bg-white rounded-xl border border-neutral-200 overflow-hidden">
+            {/* Desktop view: Table */}
+            <div className="hidden lg:block bg-white rounded-md border border-neutral-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-max">
-                  <thead className="bg-neutral-50 border-b border-neutral-200">
-                    <tr>
-                      <th className="px-3 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight">
+                  <thead>
+                    <tr className="border-b border-neutral-200">
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">
                         Événement
                       </th>
-                      <th className="px-2 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                      <th className="px-2 py-2 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
                         Date
                       </th>
-                      <th className="px-2 py-2.5 text-left text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                      <th className="px-2 py-2 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
                         Lieu
                       </th>
-                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                      <th className="px-2 py-2 text-center text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
                         Total
                       </th>
-                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                      <th className="px-2 py-2 text-center text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
                         Présents
                       </th>
-                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                      <th className="px-2 py-2 text-center text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
                         Statut
                       </th>
-                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                      <th className="px-2 py-2 text-center text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
                         Publié
                       </th>
-                      <th className="px-2 py-2.5 text-center text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap">
+                      <th className="px-2 py-2 text-center text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
                         Catégorie
                       </th>
-                      <th className="px-2 py-2.5 text-right text-xs font-medium text-neutral-700 uppercase tracking-tight whitespace-nowrap w-20">
+                      <th className="px-2 py-2 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap w-16">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-200">
+                  <tbody>
                     {paginatedEvents.map((event) => (
-                      <tr key={event.id} className="hover:bg-neutral-50 transition-colors">
-                        <td className="px-3 py-3">
+                      <tr key={event.id} className="border-b border-neutral-100 last:border-b-0">
+                        <td className="px-3 py-2.5">
                           <div className="flex items-start gap-2">
                             {event.coverImageUrl && (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={event.coverImageUrl}
                                 alt={event.title}
-                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                className="w-9 h-9 rounded object-cover flex-shrink-0"
                               />
                             )}
-                            <div className="min-w-0 max-w-[250px]">
-                              <div className="font-medium text-neutral-900 truncate text-sm">
+                            <div className="min-w-0 max-w-[240px]">
+                              <p className="text-sm font-medium text-neutral-900 truncate">
                                 {event.title}
-                              </div>
+                              </p>
                               {event.subtitle && (
-                                <div className="text-xs text-neutral-600 truncate">
+                                <p className="text-xs text-neutral-500 truncate">
                                   {event.subtitle}
-                                </div>
+                                </p>
                               )}
-                              <div className="text-[10px] text-neutral-500 font-mono mt-0.5 truncate">
+                              <p className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate">
                                 {event.slug}
-                              </div>
+                              </p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-2 py-3 whitespace-nowrap">
-                          <div className="text-sm text-neutral-900">
+                        <td className="px-2 py-2.5 whitespace-nowrap">
+                          <p className="text-sm text-neutral-900">
                             {formatDate(event.startsAt)}
-                          </div>
+                          </p>
                           {event.endsAt && (
-                            <div className="text-xs text-neutral-500">
+                            <p className="text-xs text-neutral-400">
                               → {formatDate(event.endsAt)}
-                            </div>
+                            </p>
                           )}
                         </td>
-                        <td className="px-2 py-3">
-                          <div className="text-sm text-neutral-900 truncate max-w-[100px]">
+                        <td className="px-2 py-2.5">
+                          <p className="text-sm text-neutral-900 truncate max-w-[100px]">
                             {event.venueName || '-'}
-                          </div>
+                          </p>
                           {event.city && (
-                            <div className="text-xs text-neutral-500 truncate max-w-[100px]">
+                            <p className="text-xs text-neutral-400 truncate max-w-[100px]">
                               {event.city}
-                            </div>
+                            </p>
                           )}
                         </td>
-                        {/* Colonne Total Participants */}
-                        <td className="px-2 py-3">
+                        <td className="px-2 py-2.5 text-center">
                           {(() => {
                             const attendance = eventAttendance.get(event.id);
-                            if (!attendance) {
-                              return (
-                                <div className="text-center">
-                                  <span className="text-sm text-neutral-400">-</span>
-                                </div>
-                              );
-                            }
+                            if (!attendance) return <span className="text-sm text-neutral-400">-</span>;
                             return (
-                              <div className="text-center">
-                                <div className="text-base font-bold text-neutral-900">
-                                  {attendance.totalParticipants}
-                                </div>
-                                <div className="text-[10px] text-neutral-500">
-                                  total
-                                </div>
-                              </div>
+                              <p className="text-sm font-medium text-neutral-900">
+                                {attendance.totalParticipants}
+                              </p>
                             );
                           })()}
                         </td>
-
-                        {/* Colonne Présents */}
-                        <td className="px-2 py-3">
+                        <td className="px-2 py-2.5 text-center">
                           {(() => {
                             const attendance = eventAttendance.get(event.id);
-                            if (!attendance) {
-                              return (
-                                <div className="text-center">
-                                  <span className="text-sm text-neutral-400">-</span>
-                                </div>
-                              );
-                            }
+                            if (!attendance) return <span className="text-sm text-neutral-400">-</span>;
                             return (
-                              <div className="text-center">
-                                <div className="text-base font-bold text-green-600">
+                              <div>
+                                <p className="text-sm font-medium text-neutral-900">
                                   {attendance.presentCount}
-                                </div>
-                                <div className="text-[10px] text-neutral-500">
+                                </p>
+                                <p className="text-[10px] text-neutral-400">
                                   {attendance.totalParticipants > 0
                                     ? `${((attendance.presentCount / attendance.totalParticipants) * 100).toFixed(0)}%`
                                     : '0%'
                                   }
-                                </div>
+                                </p>
                               </div>
                             );
                           })()}
                         </td>
-                        <td className="px-2 py-3 whitespace-nowrap text-center">
-                          {getStatusBadge(event.status)}
+                        <td className="px-2 py-2.5 whitespace-nowrap text-center">
+                          <span className="bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5 text-[11px]">
+                            {statusLabels[event.status]}
+                          </span>
                         </td>
-                        <td className="px-2 py-3 whitespace-nowrap text-center">
-                          {getPublicationBadge(event.publicationStatus)}
+                        <td className="px-2 py-2.5 whitespace-nowrap text-center">
+                          <span className="bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5 text-[11px]">
+                            {publicationLabels[event.publicationStatus]}
+                          </span>
                         </td>
-                        <td className="px-2 py-3 whitespace-nowrap text-center">
+                        <td className="px-2 py-2.5 whitespace-nowrap text-center">
                           {event.categoryTag ? (
-                            <span className="px-2 py-1 rounded-md text-xs font-medium bg-brand/10 text-brand whitespace-nowrap">
+                            <span className="bg-neutral-100 text-neutral-600 rounded-full px-2 py-0.5 text-[11px]">
                               {event.categoryTag}
                             </span>
                           ) : (
                             <span className="text-sm text-neutral-400">-</span>
                           )}
                         </td>
-                        <td className="px-2 py-3 whitespace-nowrap relative">
+                        <td className="px-2 py-2.5 whitespace-nowrap relative">
                           <div className="flex justify-end">
                             <button
                               onClick={() => setOpenMenuId(openMenuId === event.id ? null : event.id)}
-                              className="p-1.5 hover:bg-neutral-100 rounded-lg transition-colors"
+                              className="p-1 hover:bg-neutral-50 rounded-md transition-colors"
                             >
-                              <MoreVertical className="w-4 h-4 text-neutral-600" />
+                              <MoreVertical className="w-4 h-4 text-neutral-400" />
                             </button>
                           </div>
 
@@ -670,56 +609,56 @@ export default function EventsPage() {
                                 className="fixed inset-0 z-[90]"
                                 onClick={() => setOpenMenuId(null)}
                               />
-                              <div className="absolute right-2 mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-[100]">
+                              <div className="absolute right-2 mt-1 w-48 bg-white rounded-md shadow-sm border border-neutral-200 py-1 z-[100]">
                                 <button
                                   onClick={() => handleViewEvent(event)}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-brand"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <ExternalLink className="w-4 h-4" />
+                                  <ExternalLink className="w-4 h-4 text-neutral-400" />
                                   Voir l&apos;événement
                                 </button>
 
                                 <button
                                   onClick={() => handleEdit(event)}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <Edit className="w-4 h-4" />
+                                  <Edit className="w-4 h-4 text-neutral-400" />
                                   Modifier
                                 </button>
 
-                                <div className="border-t border-neutral-200 my-1" />
+                                <div className="border-t border-neutral-100 my-1" />
 
                                 <button
                                   onClick={() => handlePublicationChange(event, 'online')}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-green-700"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <Globe className="w-4 h-4" />
+                                  <Globe className="w-4 h-4 text-neutral-400" />
                                   Mettre en ligne
                                 </button>
 
                                 <button
                                   onClick={() => handlePublicationChange(event, 'offline')}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-orange-700"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <EyeOff className="w-4 h-4" />
+                                  <EyeOff className="w-4 h-4 text-neutral-400" />
                                   Mettre hors ligne
                                 </button>
 
                                 <button
                                   onClick={() => handlePublicationChange(event, 'draft')}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <FileText className="w-4 h-4" />
+                                  <FileText className="w-4 h-4 text-neutral-400" />
                                   Mettre en brouillon
                                 </button>
 
-                                <div className="border-t border-neutral-200 my-1" />
+                                <div className="border-t border-neutral-100 my-1" />
 
                                 <button
                                   onClick={() => handleDelete(event)}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-700"
+                                  className="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-50 flex items-center gap-2 text-neutral-600"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4 text-neutral-400" />
                                   Supprimer
                                 </button>
                               </div>
@@ -747,7 +686,7 @@ export default function EventsPage() {
         )}
       </div>
 
-      {/* Modal de création/édition */}
+      {/* Create/Edit modal */}
       <EventFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
