@@ -179,7 +179,7 @@ export default function UserDetailsModal({ isOpen, onClose, user, onUserUpdated 
                   <button onClick={resetForm} disabled={isSubmitting}
                     className="px-3 py-1.5 text-[11px] text-neutral-600 hover:bg-neutral-100 rounded-md font-medium">Annuler</button>
                   <button onClick={handleCreateSub} disabled={isSubmitting || !startDate || !endDate}
-                    className="px-3 py-1.5 text-[11px] text-white bg-neutral-900 rounded-md hover:bg-neutral-800 font-medium disabled:opacity-40 flex items-center gap-1">
+                    className="px-3 py-1.5 text-[11px] text-white bg-brand rounded-md hover:bg-brand-dark font-medium disabled:opacity-40 flex items-center gap-1">
                     {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                     Créer
                   </button>

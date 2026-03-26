@@ -646,7 +646,7 @@ export default function CreateEventPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-1.5 text-sm bg-neutral-900 hover:bg-neutral-800 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              className="px-4 py-1.5 text-sm bg-brand hover:bg-brand-dark text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               {isSubmitting ? (
                 <>

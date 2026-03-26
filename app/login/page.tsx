@@ -72,7 +72,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-9 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full h-9 bg-brand text-white text-sm font-medium rounded-md hover:bg-brand-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
               {loading ? 'Connexion...' : 'Se connecter'}

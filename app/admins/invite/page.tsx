@@ -185,7 +185,7 @@ export default function InviteAdminPage() {
               <button
                 type="submit"
                 disabled={isLoading || !email.trim()}
-                className="h-9 px-4 text-sm font-medium text-white bg-neutral-900 rounded-md hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
+                className="h-9 px-4 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
               >
                 {isLoading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
