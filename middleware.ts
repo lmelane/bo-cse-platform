@@ -8,7 +8,9 @@ import { NextRequest, NextResponse } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow login page, static assets, and API routes
+  // Allow login page, static assets, and API routes.
+  // /api routes are exempted because they proxy to cse-plateform via rewrites
+  // (see next.config.ts). Auth is enforced server-side by withAdminAuth on the backend.
   const isPublicPath =
     pathname === '/login' ||
     pathname.startsWith('/_next') ||
