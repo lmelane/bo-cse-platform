@@ -81,6 +81,17 @@ export interface User {
   updatedAt: string;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: 'admin' | 'superadmin';
+  status: 'active' | 'pending';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Guest {
   id: string;
   firstName: string;
@@ -350,6 +361,14 @@ export const usersApi = {
 
   inviteAdmin: async (email: string) => {
     const response = await api.post<{ success: boolean; message: string }>('/api/mgnt-sys-cse/admins/invite', { email });
+    return response.data;
+  },
+};
+
+// API Endpoints - Admins
+export const adminsApi = {
+  getAll: async () => {
+    const response = await api.get<{ success: boolean; count: number; data: AdminUser[] }>('/api/mgnt-sys-cse/admins');
     return response.data;
   },
 };

@@ -40,7 +40,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }
 
   // Vérifier que l'utilisateur est admin
-  if (user && user.role.toLowerCase() !== 'admin') {
+  if (user && !['admin', 'superadmin'].includes(user.role.toLowerCase())) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center max-w-md p-8">

@@ -6,7 +6,7 @@ export interface AuthUser {
   email: string;
   firstName: string | null;
   lastName: string | null;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'superadmin';
 }
 
 // Instance axios dédiée à l'auth
@@ -28,14 +28,14 @@ export const authService = {
         email: string;
         first_name: string | null;
         last_name: string | null;
-        role: 'user' | 'admin';
+        role: 'user' | 'admin' | 'superadmin';
       };
     }>('/api/auth/login', { email, password });
 
     const apiUser = response.data.user;
 
     // Vérifier que l'utilisateur est admin (case-insensitive)
-    if (apiUser.role.toLowerCase() !== 'admin') {
+    if (!['admin', 'superadmin'].includes(apiUser.role.toLowerCase())) {
       throw new Error('Accès refusé. Seuls les administrateurs peuvent se connecter.');
     }
 
@@ -46,7 +46,7 @@ export const authService = {
         email: apiUser.email,
         firstName: apiUser.first_name,
         lastName: apiUser.last_name,
-        role: apiUser.role.toLowerCase() as 'user' | 'admin',
+        role: apiUser.role.toLowerCase() as 'user' | 'admin' | 'superadmin',
       },
     };
   },
@@ -59,13 +59,13 @@ export const authService = {
         email: string;
         first_name: string | null;
         last_name: string | null;
-        role: 'user' | 'admin';
+        role: 'user' | 'admin' | 'superadmin';
       };
     }>('/api/auth/me');
 
     const apiUser = response.data.user;
 
-    if (apiUser.role.toLowerCase() !== 'admin') {
+    if (!['admin', 'superadmin'].includes(apiUser.role.toLowerCase())) {
       throw new Error('Accès refusé. Seuls les administrateurs peuvent accéder au back-office.');
     }
 
@@ -74,7 +74,7 @@ export const authService = {
       email: apiUser.email,
       firstName: apiUser.first_name,
       lastName: apiUser.last_name,
-      role: apiUser.role.toLowerCase() as 'user' | 'admin',
+      role: apiUser.role.toLowerCase() as 'user' | 'admin' | 'superadmin',
     };
   },
 
