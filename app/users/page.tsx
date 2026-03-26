@@ -1,512 +1,184 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { usersApi, type User } from '@/lib/api';
-import { User as UserIcon, Shield, Loader2, Euro, TrendingUp, MoreVertical, Search, Filter, Download } from 'lucide-react';
+import { Loader2, Search, Download } from 'lucide-react';
 import { exportToCSV } from '@/lib/csv-utils';
 import toast from 'react-hot-toast';
 import { useDebounce } from 'use-debounce';
 import { ITEMS_PER_PAGE_USERS, SEARCH_DEBOUNCE_MS } from '@/lib/config';
 import Pagination from '@/components/Pagination';
 import UserDetailsModal from '@/components/UserDetailsModal';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+function Dot({ color }: { color: string }) {
+  return <span className={`inline-block w-1.5 h-1.5 rounded-full ${color}`} />;
+}
 
 export default function UsersPage() {
-  const { data: users = [], isLoading: loading, error: queryError } = useQuery<User[]>({
+  const { data: users = [], isLoading, error: queryError } = useQuery<User[]>({
     queryKey: ['users'],
-    queryFn: async () => {
-      const response = await usersApi.getAll();
-      return response.data;
-    },
+    queryFn: async () => { const r = await usersApi.getAll(); return r.data; },
   });
 
-  const error = queryError ? (queryError as { response?: { data?: { message?: string } } }).response?.data?.message || 'Erreur lors du chargement des utilisateurs' : null;
+  const error = queryError ? 'Erreur lors du chargement' : null;
 
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-
-  // Filtres et recherche
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm] = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
-  const [filterType, setFilterType] = useState<'all' | 'event_based' | 'unlimited'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED'>('all');
-
-  // Pagination
+  const [debouncedSearch] = useDebounce(searchTerm, SEARCH_DEBOUNCE_MS);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'ACTIVE' | 'EXPIRED'>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = ITEMS_PER_PAGE_USERS;
 
-  // Exporter les utilisateurs en CSV (sécurisé contre XSS)
-  const handleExportUsers = () => {
-    const headers = [
-      'ID',
-      'Email',
-      'Prénom',
-      'Nom',
-      'Association',
-      'Rôle',
-      'Onboarding complété',
-      'Type abonnement',
-      'Statut abonnement',
-      'Prix abonnement (€)',
-      'Date début abonnement',
-      'Date fin abonnement',
-      'Stripe Customer ID',
-      'Stripe Subscription ID',
-      'Date de création',
-      'Date de mise à jour'
-    ];
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearch, filterStatus]);
 
-    // BO-CSV fix: exporter les utilisateurs filtrés, pas tous
-    const rows = filteredUsers.map(user => [
-      user.id,
-      user.email,
-      user.firstName,
-      user.lastName,
-      user.association,
-      user.role,
-      user.onboardingCompleted ? 'Oui' : 'Non',
-      user.subscriptionType === 'event_based' ? 'Adhésion Événementielle' : user.subscriptionType === 'unlimited' ? 'Adhésion Illimitée' : '',
-      user.subscriptionStatus,
-      user.subscriptionPriceCents ? (user.subscriptionPriceCents / 100).toFixed(2) : '',
-      user.subscriptionStartDate,
-      user.subscriptionEndDate,
-      user.stripeCustomerId,
-      user.stripeSubscriptionId,
-      user.createdAt,
-      user.updatedAt
+  const filtered = useMemo(() => users.filter(u => {
+    const s = debouncedSearch.toLowerCase();
+    const matchSearch = !s || [u.email, u.firstName, u.lastName].some(v => v?.toLowerCase().includes(s));
+    const matchStatus = filterStatus === 'all' || u.subscriptionStatus === filterStatus;
+    return matchSearch && matchStatus;
+  }), [users, debouncedSearch, filterStatus]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE_USERS);
+  const paginated = useMemo(() => {
+    const s = (currentPage - 1) * ITEMS_PER_PAGE_USERS;
+    return filtered.slice(s, s + ITEMS_PER_PAGE_USERS);
+  }, [filtered, currentPage]);
+
+  const handleExport = () => {
+    const headers = ['Nom', 'Email', 'Association', 'Abonnement', 'Statut', 'Date inscription'];
+    const rows = filtered.map(u => [
+      `${u.firstName || ''} ${u.lastName || ''}`.trim() || '—',
+      u.email, u.association || '—',
+      u.subscriptionType === 'unlimited' ? 'Illimitée' : u.subscriptionType === 'event_based' ? 'Événementielle' : '—',
+      u.subscriptionStatus || '—',
+      u.createdAt ? format(new Date(u.createdAt), 'dd/MM/yyyy', { locale: fr }) : '—',
     ]);
-
-    const filename = `utilisateurs_${new Date().toISOString().split('T')[0]}.csv`;
-    exportToCSV(filename, headers, rows);
-    toast.success(`${filteredUsers.length} utilisateurs exportés avec succès`);
+    exportToCSV(`utilisateurs_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+    toast.success(`${rows.length} utilisateurs exportés`);
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const handleViewUser = async (user: User) => {
+    try {
+      const r = await usersApi.getById(user.id);
+      setSelectedUser(r.data);
+      setIsDetailsOpen(true);
+    } catch { toast.error('Erreur de chargement'); }
   };
 
-  // Filtrer les utilisateurs (avec debounce sur la recherche)
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      // Recherche par nom, prénom, email (debouncée)
-      const searchLower = debouncedSearchTerm.toLowerCase();
-      const matchesSearch =
-        !debouncedSearchTerm ||
-        user.email.toLowerCase().includes(searchLower) ||
-        user.firstName?.toLowerCase().includes(searchLower) ||
-        user.lastName?.toLowerCase().includes(searchLower) ||
-        `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower);
-
-      // Filtre par type d'abonnement
-      const matchesType = filterType === 'all' || user.subscriptionType === filterType;
-
-      // Filtre par statut d'abonnement
-      const matchesStatus = filterStatus === 'all' || user.subscriptionStatus === filterStatus;
-
-      return matchesSearch && matchesType && matchesStatus;
-    });
-  }, [users, debouncedSearchTerm, filterType, filterStatus]);
-
-  // Calculer les données paginées
-  const { paginatedUsers, totalPages } = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-
-    return {
-      paginatedUsers: filteredUsers.slice(startIndex, endIndex),
-      totalPages: Math.ceil(filteredUsers.length / ITEMS_PER_PAGE),
-    };
-  }, [filteredUsers, currentPage, ITEMS_PER_PAGE]);
-
-  // Réinitialiser à la page 1 quand les filtres changent
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearchTerm, filterType, filterStatus]);
-
-  // Calculer les statistiques d'abonnements (basées sur les utilisateurs filtrés)
-  const subscriptionStats = {
-    totalRevenue: filteredUsers.reduce((sum, user) => {
-      return sum + (user.subscriptionPriceCents || 0);
-    }, 0),
-    activeSubscriptions: filteredUsers.filter(user => user.subscriptionStatus === 'ACTIVE').length,
-  };
-
-  // Format type d'abonnement - Affiche le nom réel du plan
-  const formatSubscriptionType = (type: 'event_based' | 'unlimited' | null) => {
-    if (!type) return '-';
-    const subscriptionNames = {
-      event_based: 'Adhésion Événementielle',
-      unlimited: 'Adhésion Illimitée',
-    };
-    return subscriptionNames[type] || '-';
-  };
-
-  // Format statut d'abonnement
-  const formatSubscriptionStatus = (status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED' | null) => {
-    if (!status) return null;
-    const statusConfig = {
-      ACTIVE: { label: 'Actif', className: 'bg-green-100 text-green-700' },
-      INACTIVE: { label: 'Inactif', className: 'bg-gray-100 text-gray-700' },
-      EXPIRED: { label: 'Expiré', className: 'bg-red-100 text-red-700' },
-    };
-    return statusConfig[status];
-  };
+  const activeCount = users.filter(u => u.subscriptionStatus === 'ACTIVE').length;
 
   return (
     <AdminLayout>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-base font-semibold text-neutral-900">Utilisateurs</h1>
-            <p className="text-xs text-neutral-500 mt-0.5">
-              {!loading && `${filteredUsers.length} utilisateur${filteredUsers.length > 1 ? 's' : ''} affiché${filteredUsers.length > 1 ? 's' : ''} sur ${users.length}`}
-            </p>
-          </div>
-          {!loading && users.length > 0 && (
-            <button
-              onClick={handleExportUsers}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand hover:bg-brand-dark text-white rounded-md transition-colors font-medium text-xs whitespace-nowrap"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Exporter les utilisateurs</span>
-              <span className="sm:hidden">Exporter</span>
+        <div className="flex items-center justify-between">
+          <h1 className="text-base font-semibold text-neutral-900">Utilisateurs</h1>
+          {filtered.length > 0 && (
+            <button onClick={handleExport} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-600 border border-neutral-200 rounded-md hover:bg-neutral-50 font-medium">
+              <Download className="w-3.5 h-3.5" /> Exporter
             </button>
           )}
         </div>
 
-        {/* Recherche et filtres */}
-        {!loading && !error && (
-          <div className="bg-white rounded-md border border-neutral-200 p-3">
-            <div className="flex flex-col md:flex-row gap-2.5">
-              {/* Barre de recherche */}
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <input
-                    type="text"
-                    placeholder="Rechercher par nom, prénom ou email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
-                  />
-                </div>
-              </div>
+        {/* KPIs inline */}
+        {!isLoading && (
+          <div className="flex items-center gap-5 text-xs text-neutral-500">
+            <span><strong className="text-neutral-900 font-semibold">{users.length}</strong> inscrits</span>
+            <span><strong className="text-neutral-900 font-semibold">{activeCount}</strong> abonnés actifs</span>
+            <span><strong className="text-neutral-900 font-semibold">{users.length - activeCount}</strong> inactifs/expirés</span>
+          </div>
+        )}
 
-              {/* Filtre type d'abonnement */}
-              <div className="w-full md:w-52">
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-                  className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
-                >
-                  <option value="all">Tous les types</option>
-                  <option value="event_based">Adhésion Événementielle</option>
-                  <option value="unlimited">Adhésion Illimitée</option>
-                </select>
-              </div>
-
-              {/* Filtre statut d'abonnement */}
-              <div className="w-full md:w-48">
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-                  className="w-full px-3 py-1.5 text-sm border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
-                >
-                  <option value="all">Tous les statuts</option>
-                  <option value="ACTIVE">Actif</option>
-                  <option value="INACTIVE">Inactif</option>
-                  <option value="EXPIRED">Expiré</option>
-                </select>
-              </div>
+        {/* Filters */}
+        {!isLoading && !error && (
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                type="text" value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Rechercher..."
+                className="w-full h-9 pl-10 pr-3 border border-neutral-200 rounded-md text-sm bg-white focus:outline-none focus:border-neutral-400"
+              />
             </div>
-          </div>
-        )}
-
-        {/* Statistiques d'abonnements */}
-        {!loading && !error && users.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Chiffre d'affaires total */}
-            <div className="bg-white rounded-md border border-neutral-200 p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-neutral-500 mb-0.5">
-                    Chiffre d&apos;affaires total
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900">
-                    {(subscriptionStats.totalRevenue / 100).toFixed(2)} €
-                  </p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
-                  <Euro className="w-3.5 h-3.5 text-green-600" />
-                </div>
-              </div>
-              <p className="text-[11px] text-neutral-400 mt-1.5">
-                Somme de tous les abonnements
-              </p>
-            </div>
-
-            {/* Abonnements actifs */}
-            <div className="bg-white rounded-md border border-neutral-200 p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-neutral-500 mb-0.5">
-                    Abonnements actifs
-                  </p>
-                  <p className="text-lg font-semibold text-neutral-900">
-                    {subscriptionStats.activeSubscriptions}
-                  </p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-brand/5 flex items-center justify-center">
-                  <TrendingUp className="w-3.5 h-3.5 text-brand" />
-                </div>
-              </div>
-              <p className="text-[11px] text-neutral-400 mt-1.5">
-                Utilisateurs avec abonnement actif
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-brand" />
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {/* Users Table */}
-        {!loading && !error && filteredUsers.length > 0 && (
-          <div className="bg-white rounded-md border border-neutral-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-neutral-50 border-b border-neutral-200">
-                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                      Utilisateur
-                    </th>
-                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                      Association
-                    </th>
-                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                      Rôle
-                    </th>
-                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                      Type abonnement
-                    </th>
-                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                      Statut abonnement
-                    </th>
-                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                      Onboarding
-                    </th>
-                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                      Date de création
-                    </th>
-                    <th className="text-left px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-200">
-                  {paginatedUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-neutral-50 transition-colors">
-                      {/* Utilisateur */}
-                      <td className="px-3 py-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-brand/5 flex items-center justify-center flex-shrink-0">
-                            <UserIcon className="w-3.5 h-3.5 text-brand" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium text-neutral-900 truncate">
-                              {user.firstName && user.lastName
-                                ? `${user.firstName} ${user.lastName}`
-                                : 'Non renseigné'}
-                            </div>
-                            <div className="text-xs text-neutral-500 truncate">{user.email}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Association */}
-                      <td className="px-3 py-1.5">
-                        <span className="text-neutral-700">
-                          {user.association || 'Non renseignée'}
-                        </span>
-                      </td>
-
-                      {/* Rôle */}
-                      <td className="px-3 py-1.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium ${user.role.toLowerCase() === 'admin'
-                            ? 'bg-brand/10 text-brand'
-                            : 'bg-neutral-100 text-neutral-700'
-                            }`}
-                        >
-                          {user.role.toLowerCase() === 'admin' ? (
-                            <Shield className="w-3 h-3" />
-                          ) : (
-                            <UserIcon className="w-3 h-3" />
-                          )}
-                          {user.role.toLowerCase() === 'admin' ? 'Admin' : 'Utilisateur'}
-                        </span>
-                      </td>
-
-                      {/* Type abonnement */}
-                      <td className="px-3 py-1.5">
-                        <span className="text-sm text-neutral-700">
-                          {formatSubscriptionType(user.subscriptionType)}
-                        </span>
-                      </td>
-
-                      {/* Statut abonnement */}
-                      <td className="px-3 py-1.5">
-                        {user.subscriptionStatus ? (
-                          <span
-                            className={`inline-flex px-2 py-0.5 rounded text-[11px] font-medium ${formatSubscriptionStatus(user.subscriptionStatus)?.className
-                              }`}
-                          >
-                            {formatSubscriptionStatus(user.subscriptionStatus)?.label}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-neutral-400">-</span>
-                        )}
-                      </td>
-
-                      {/* Onboarding */}
-                      <td className="px-3 py-1.5">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded text-[11px] font-medium ${user.onboardingCompleted
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                            }`}
-                        >
-                          {user.onboardingCompleted ? 'Complété' : 'En cours'}
-                        </span>
-                      </td>
-
-                      {/* Date de création */}
-                      <td className="px-3 py-2.5 text-sm text-neutral-600">
-                        {formatDate(user.createdAt)}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-3 py-1.5">
-                        <div className="relative">
-                          <button
-                            onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
-                            className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
-                          >
-                            <MoreVertical className="w-5 h-5 text-neutral-600" />
-                          </button>
-
-                          {/* Menu déroulant */}
-                          {openMenuId === user.id && (
-                            <>
-                              {/* Overlay pour fermer le menu */}
-                              <div
-                                className="fixed inset-0 z-[90]"
-                                onClick={() => setOpenMenuId(null)}
-                              />
-
-                              {/* Menu */}
-                              <div className="absolute right-0 top-10 z-[100] w-56 bg-white rounded-lg shadow-lg border border-neutral-200 py-1">
-                                <button
-                                  onClick={async () => {
-                                    setOpenMenuId(null);
-                                    // Récupérer les détails complets de l'utilisateur
-                                    try {
-                                      const response = await usersApi.getById(user.id);
-                                      setSelectedUser(response.data);
-                                      setIsDetailsModalOpen(true);
-                                    } catch {
-                                      toast.error('Erreur lors du chargement des détails');
-                                    }
-                                  }}
-                                  className="w-full text-left px-4 py-2 hover:bg-neutral-50 transition-colors flex items-center gap-3"
-                                >
-                                  <UserIcon className="w-4 h-4 text-neutral-600" />
-                                  <span className="text-sm text-neutral-700">Voir les détails</span>
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredUsers.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        )}
-
-        {/* Empty State - Aucun résultat */}
-        {!loading && !error && users.length > 0 && filteredUsers.length === 0 && (
-          <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
-            <Filter className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-neutral-900 mb-1.5">
-              Aucun résultat
-            </h3>
-            <p className="text-neutral-600 mb-4">
-              Aucun utilisateur ne correspond à vos critères de recherche.
-            </p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setFilterType('all');
-                setFilterStatus('all');
-              }}
-              className="px-3 py-1.5 text-xs bg-brand text-white rounded-md hover:bg-brand-dark transition-colors"
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+              className="h-9 px-3 border border-neutral-200 rounded-md text-sm bg-white focus:outline-none focus:border-neutral-400"
             >
-              Réinitialiser les filtres
-            </button>
+              <option value="all">Tous</option>
+              <option value="ACTIVE">Actifs</option>
+              <option value="EXPIRED">Expirés</option>
+            </select>
           </div>
         )}
 
-        {/* Empty State - Aucun utilisateur */}
-        {!loading && !error && users.length === 0 && (
-          <div className="bg-white rounded-md border border-neutral-200 p-6 text-center">
-            <UserIcon className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-neutral-900 mb-1.5">
-              Aucun utilisateur
-            </h3>
-            <p className="text-neutral-600">
-              Il n&apos;y a aucun utilisateur enregistré pour le moment.
-            </p>
+        {/* Content */}
+        {isLoading ? (
+          <div className="flex justify-center py-16"><Loader2 className="w-4 h-4 animate-spin text-neutral-400" /></div>
+        ) : error ? (
+          <div className="bg-white rounded-md border border-neutral-200 p-4 text-sm text-neutral-600">{error}</div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-md border border-neutral-200 p-8 text-center">
+            <p className="text-sm text-neutral-500">{users.length === 0 ? 'Aucun utilisateur' : 'Aucun résultat'}</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-md border border-neutral-200 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-neutral-200">
+                  <th className="px-4 py-2.5 text-left text-[11px] text-neutral-500 uppercase tracking-wider font-medium">Utilisateur</th>
+                  <th className="px-4 py-2.5 text-left text-[11px] text-neutral-500 uppercase tracking-wider font-medium hidden md:table-cell">Abonnement</th>
+                  <th className="px-4 py-2.5 text-left text-[11px] text-neutral-500 uppercase tracking-wider font-medium hidden sm:table-cell">Inscription</th>
+                  <th className="px-4 py-2.5 text-right text-[11px] text-neutral-500 uppercase tracking-wider font-medium">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.map((user) => (
+                  <tr
+                    key={user.id}
+                    onClick={() => handleViewUser(user)}
+                    className="border-b border-neutral-100 cursor-pointer hover:bg-neutral-50/50 transition-colors"
+                  >
+                    <td className="px-4 py-2.5">
+                      <p className="text-sm font-medium text-neutral-900">
+                        {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'Non renseigné'}
+                      </p>
+                      <p className="text-[11px] text-neutral-400">{user.email}</p>
+                    </td>
+                    <td className="px-4 py-2.5 text-sm text-neutral-600 hidden md:table-cell">
+                      {user.subscriptionType === 'unlimited' ? 'Illimitée' : user.subscriptionType === 'event_based' ? 'Événementielle' : '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-sm text-neutral-500 hidden sm:table-cell whitespace-nowrap">
+                      {user.createdAt ? format(new Date(user.createdAt), 'dd MMM yyyy', { locale: fr }) : '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-neutral-600">
+                        <Dot color={user.subscriptionStatus === 'ACTIVE' ? 'bg-green-500' : 'bg-neutral-300'} />
+                        {user.subscriptionStatus === 'ACTIVE' ? 'Actif' : user.subscriptionStatus === 'EXPIRED' ? 'Expiré' : 'Inactif'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {totalPages > 1 && (
+              <div className="px-4 py-3 border-t border-neutral-100">
+                <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filtered.length} itemsPerPage={ITEMS_PER_PAGE_USERS} onPageChange={setCurrentPage} />
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Modal de détails utilisateur */}
       <UserDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
         user={selectedUser}
       />
     </AdminLayout>
